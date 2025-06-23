@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PRN222_CloneEbay_Seller", "PRN222_CloneEbay_Seller\PRN222_CloneEbay_Seller.csproj", "{4E51514D-18F4-48AE-BA22-E6B8EC125EFC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4E51514D-18F4-48AE-BA22-E6B8EC125EFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E51514D-18F4-48AE-BA22-E6B8EC125EFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E51514D-18F4-48AE-BA22-E6B8EC125EFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E51514D-18F4-48AE-BA22-E6B8EC125EFC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A20B457D-E5DC-49CC-9695-4442A40BE806}
+	EndGlobalSection
+EndGlobal

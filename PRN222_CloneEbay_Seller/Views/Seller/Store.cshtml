@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store | Seller Hub | eBay</title>
+</head>
+<body>
+   
+    <!-- Seller Hub Header -->
+    <div class="container">
+        <div class="seller-hub-header">
+            <div class="seller-hub-title">
+                <h1>Seller Hub</h1>
+                <span class="seller-id">(2,431)</span>
+            </div>
+
+            <!-- Navigation Tabs với Dropdown Menu -->
+            <div class="tabs-container">
+                <!-- Tab thông thường -->
+                <a href="/Seller/Overview" class="tab active">Overview</a>
+
+                <!-- Tab Orders có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Orders</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">All orders</a>
+                        <a href="#" class="dropdown-item">Awaiting payment</a>
+                        <a href="#" class="dropdown-item">Awaiting shipment</a>
+                        <a href="#" class="dropdown-item">Paid and shipped</a>
+                        <a href="#" class="dropdown-item">Cancellations</a>
+                        <a href="#" class="dropdown-item">Returns</a>
+                        <a href="#" class="dropdown-item">Requests and disputes</a>
+                        <a href="#" class="dropdown-item">Shipping labels</a>
+                    </div>
+                </div>
+
+                <!-- Tab Listings có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Listings</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Create listing</a>
+                        <a href="#" class="dropdown-item">Active</a>
+                        <a href="#" class="dropdown-item">Unsold</a>
+                        <a href="#" class="dropdown-item">Drafts</a>
+                        <a href="#" class="dropdown-item">Scheduled</a>
+                        <a href="#" class="dropdown-item">Ended</a>
+                    </div>
+                </div>
+
+                <!-- Tab Marketing có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Marketing</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Promotions</a>
+                        <a href="#" class="dropdown-item">Advertising</a>
+                        <a href="#" class="dropdown-item">Email marketing</a>
+                    </div>
+                </div>
+
+                <!-- Tab thông thường -->
+                <a href="#" class="tab">Store</a>
+
+                <!-- Tab Performance có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="/Seller/Performance" class="tab has-dropdown">Performance</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Summary</a>
+                        <a href="#" class="dropdown-item">Seller level</a>
+                        <a href="#" class="dropdown-item">Sales</a>
+                        <a href="#" class="dropdown-item">Traffic</a>
+                    </div>
+                </div>
+
+                <!-- Tab Payments có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Payments</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Overview</a>
+                        <a href="#" class="dropdown-item">Payouts</a>
+                        <a href="#" class="dropdown-item">Transaction history</a>
+                    </div>
+                </div>
+
+                <!-- Tab thông thường khác -->
+                <a href="#" class="tab">Research</a>
+
+                <!-- Tab Reports có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Reports</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Sales reports</a>
+                        <a href="#" class="dropdown-item">Traffic reports</a>
+                        <a href="#" class="dropdown-item">Performance reports</a>
+                    </div>
+                </div>
+
+                <!-- Link bên phải -->
+                <div class="right-nav">
+                    <a href="#">Messages (129)</a>
+                    <a href="#">Comments 7</a>
+                    <a href="#">Opt out</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Management Content -->
+        <div class="store-container">
+            <!-- Store Sidebar -->
+            <div class="sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#" class="active">Store Information</a></li>
+                    <li><a href="#">Store Design</a></li>
+                    <li><a href="#">Store Categories</a></li>
+                    <li><a href="#">Store Inventory</a></li>
+                    <li><a href="#">Promotions</a></li>
+                    <li><a href="#">Store Policies</a></li>
+                    <li><a href="#">Subscriber Management</a></li>
+                </ul>
+            </div>
+
+            <!-- Store Content -->
+            <div class="store-content">
+                <div class="store-header">
+                    <h2 class="page-title">Store Information</h2>
+                    <p class="info-text">Manage your store details, including name, description and banner image. These details help buyers learn more about your business.</p>
+                </div>
+
+                <!-- Success Message (initially hidden) -->
+                <div id="successMessage" class="status-message status-success" style="display: none;">
+                    Your store information has been successfully updated.
+                </div>
+
+                <!-- Store Info Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Basic Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="storeForm">
+                            <div class="form-group">
+                                <label for="storeName" class="form-label">Store name</label>
+                                <input type="text" id="storeName" name="storeName" class="form-control" value="VD Electronics" maxlength="100">
+                                <div class="input-hint">Maximum 100 characters</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="storeDescription" class="form-label">Store description</label>
+                                <textarea id="storeDescription" name="storeDescription" class="form-control">Welcome to VD Electronics - your trusted source for quality electronics, gadgets, and accessories. We offer premium tech products at competitive prices with fast shipping and excellent customer service!</textarea>
+                                <div class="input-hint">Describe your store and what you sell. This helps buyers find your items in search results.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Store banner</label>
+                                <div id="bannerContainer" class="banner-container" onclick="document.getElementById('bannerInput').click()">
+                                    <div id="bannerPreview" class="banner-preview" style="background-image: url('https://i.ebayimg.com/images/g/eDYAAOSwKx1iVmBg/s-l1600.jpg')"></div>
+                                    <div class="upload-icon">+</div>
+                                    <div class="upload-text">
+                                        <div>Click to upload banner image</div>
+                                        <div>Recommended size: 1200px × 300px</div>
+                                    </div>
+                                    <input type="file" id="bannerInput" class="file-input" accept="image/*">
+                                </div>
+                                <div class="input-hint">Banner image appears at the top of your store. Maximum file size: 12MB</div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Store Preview Section -->
+                <div class="preview-container">
+                    <h3 class="preview-title">Store Preview</h3>
+                    <div class="store-preview">
+                        <div id="previewBanner" class="preview-banner" style="background-image: url('https://i.ebayimg.com/images/g/eDYAAOSwKx1iVmBg/s-l1600.jpg')"></div>
+                        <div class="preview-info">
+                            <div id="previewStoreName" class="preview-store-name">VD Electronics</div>
+                            <div id="previewDescription" class="preview-description">Welcome to VD Electronics - your trusted source for quality electronics, gadgets, and accessories. We offer premium tech products at competitive prices with fast shipping and excellent customer service!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Button Row -->
+                <div class="button-row">
+                    <button type="button" class="btn btn-secondary">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveStoreInfo()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize banner container if has image
+            const bannerPreview = document.getElementById('bannerPreview');
+            if (bannerPreview.style.backgroundImage) {
+                document.getElementById('bannerContainer').classList.add('has-preview');
+            }
+
+            // Set up banner image upload
+            document.getElementById('bannerInput').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    document.getElementById('bannerPreview').style.backgroundImage = `url(${imageUrl})`;
+                    document.getElementById('previewBanner').style.backgroundImage = `url(${imageUrl})`;
+                    document.getElementById('bannerContainer').classList.add('has-preview');
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Live preview for store name
+            document.getElementById('storeName').addEventListener('input', function(event) {
+                document.getElementById('previewStoreName').textContent = event.target.value;
+            });
+
+            // Live preview for store description
+            document.getElementById('storeDescription').addEventListener('input', function(event) {
+                document.getElementById('previewDescription').textContent = event.target.value;
+            });
+        });
+
+        // Function to save store info
+        function saveStoreInfo() {
+            // In a real application, here you would make an AJAX request to the server
+            // to save the form data to the database (updating the Store table)
+
+            // For now, we'll just show the success message
+            const successMessage = document.getElementById('successMessage');
+            successMessage.style.display = 'block';
+
+            // Scroll to the top of the page to show the message
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+
+            // Hide the message after 5 seconds
+            setTimeout(function() {
+                successMessage.style.display = 'none';
+            }, 5000);
+
+            // Example data that would be sent to the server in a real implementation:
+            const storeData = {
+                storeName: document.getElementById('storeName').value,
+                description: document.getElementById('storeDescription').value,
+                // In a real implementation, the banner would be uploaded to a server
+                // and we would store the URL returned by the server
+            };
+
+            console.log('Store data to be saved:', storeData);
+        }
+    </script>
+</body>
+</html>

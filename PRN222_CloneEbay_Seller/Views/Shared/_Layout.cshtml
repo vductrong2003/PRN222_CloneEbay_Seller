@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PRN222_CloneEbay_Seller</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PRN222_CloneEbay_Seller.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="d-flex justify-content-between top-header">
+                <div>
+                    <a href="#" class="greeting">Hi vductrong2003!</a>
+                </div>
+                <div>
+                    <a href="#">Daily Deals</a>
+                    <a href="#">Help & Contact</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search bar -->
+    <div class="container">
+        <div class="d-flex second-header">
+            <a href="#" class="logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/EBay_logo.svg/2560px-EBay_logo.svg.png" alt="eBay">
+            </a>
+            <div class="category-nav">
+                Shop by<br>category
+            </div>
+            <div class="search-container">
+                <input type="text" class="search-box" placeholder="Search for anything">
+            </div>
+            <a href="#" class="advanced-link">Advanced</a>
+        </div>
+    </div>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #767676; font-size: 12px; border-top: 1px solid #e5e5e5;">
+        <div>© 2025 eBay Inc. All rights reserved.</div>
+        <div>Last updated: 2025-06-23 05:11:33</div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
