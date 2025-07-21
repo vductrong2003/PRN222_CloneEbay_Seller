@@ -1,6 +1,16 @@
+﻿using Microsoft.EntityFrameworkCore;
+using PRN222_CloneEbay_Seller.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Lấy chuỗi kết nối từ appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Đăng ký DbContext với DI container
+builder.Services.AddDbContext<CloneEbayDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Thêm các dịch vụ khác cho controller và view
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
@@ -9,7 +19,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -22,6 +31,6 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Seller}/{action=Overview}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
