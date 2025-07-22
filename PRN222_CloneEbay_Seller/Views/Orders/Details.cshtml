@@ -1,0 +1,367 @@
+@model PRN222_CloneEbay_Seller.Models.OrderTable
+@{
+    ViewData["Title"] = $"Order #{Model.Id} Details";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order #@Model.Id Details | Seller Hub | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="/Orders">Orders</a> > Order #@Model.Id Details
+        </div>
+
+        <!-- Status Messages -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="status-message status-success">
+                @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="status-message status-error">
+                @TempData["Error"]
+            </div>
+        }
+
+        <!-- Order Header -->
+        <div class="order-details-header">
+            <div class="order-title">
+                <h1>Order #@Model.Id</h1>
+                <span class="status-badge status-@(Model.Status?.ToLower() ?? "unknown")">
+                    @(Model.Status ?? "Unknown")
+                </span>
+            </div>
+            <div class="order-date">
+                Ordered on @Model.OrderDate?.ToString("MMMM dd, yyyy 'at' h:mm tt")
+            </div>
+        </div>
+
+        <div class="order-details-grid">
+            <!-- Left Column -->
+            <div class="order-main-content">
+                <!-- Order Items -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Order Items</h3>
+                        <div class="panel-stats">
+                            @Model.OrderItems.Count item(s)
+                        </div>
+                    </div>
+                    
+                    <div class="order-items-details">
+                        @foreach (var item in Model.OrderItems)
+                        {
+                            <div class="order-item-detail">
+                                <div class="item-image">
+                                    @if (!string.IsNullOrEmpty(item.Product?.Images))
+                                    {
+                                        <img src="@item.Product.Images.Split(',').FirstOrDefault()" alt="@item.Product.Title" />
+                                    }
+                                    else
+                                    {
+                                        <div class="no-image">📦</div>
+                                    }
+                                </div>
+                                <div class="item-info">
+                                    <div class="item-title">@(item.Product?.Title ?? "Unknown Product")</div>
+                                    <div class="item-details">
+                                        <span class="item-sku">SKU: @(item.Product?.Id ?? 0)</span>
+                                        <span class="item-category">@(item.Product?.Category?.Name ?? "No Category")</span>
+                                    </div>
+                                    <div class="item-pricing">
+                                        <span class="item-price">$@(item.UnitPrice?.ToString("N2") ?? "0.00")</span>
+                                        <span class="item-qty">Qty: @item.Quantity</span>
+                                        <span class="item-total">Total: $@((item.UnitPrice * item.Quantity)?.ToString("N2") ?? "0.00")</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="order-total-summary">
+                        <div class="total-row">
+                            <span class="total-label">Order Total:</span>
+                            <span class="total-value">$@(Model.TotalPrice?.ToString("N2") ?? "0.00")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Information -->
+                @if (Model.ShippingInfos.Any())
+                {
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Shipping Information</h3>
+                        </div>
+                        
+                        @foreach (var shipping in Model.ShippingInfos)
+                        {
+                            <div class="shipping-details">
+                                <div class="shipping-row">
+                                    <span class="shipping-label">Carrier:</span>
+                                    <span class="shipping-value">@(shipping.Carrier ?? "Not specified")</span>
+                                </div>
+                                <div class="shipping-row">
+                                    <span class="shipping-label">Tracking Number:</span>
+                                    <span class="shipping-value">@(shipping.TrackingNumber ?? "Not provided")</span>
+                                </div>
+                                <div class="shipping-row">
+                                    <span class="shipping-label">Status:</span>
+                                    <span class="shipping-status">@(shipping.Status ?? "Unknown")</span>
+                                </div>
+                                @if (shipping.EstimatedArrival.HasValue)
+                                {
+                                    <div class="shipping-row">
+                                        <span class="shipping-label">Estimated Arrival:</span>
+                                        <span class="shipping-value">@shipping.EstimatedArrival.Value.ToString("MMMM dd, yyyy")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Payment Information -->
+                @if (Model.Payments.Any())
+                {
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Payment Information</h3>
+                        </div>
+                        
+                        @foreach (var payment in Model.Payments)
+                        {
+                            <div class="payment-details">
+                                <div class="payment-row">
+                                    <span class="payment-label">Amount:</span>
+                                    <span class="payment-value">$@(payment.Amount?.ToString("N2") ?? "0.00")</span>
+                                </div>
+                                <div class="payment-row">
+                                    <span class="payment-label">Method:</span>
+                                    <span class="payment-value">@(payment.Method ?? "Not specified")</span>
+                                </div>
+                                <div class="payment-row">
+                                    <span class="payment-label">Status:</span>
+                                    <span class="payment-status status-@(payment.Status?.ToLower() ?? "unknown")">
+                                        @(payment.Status ?? "Unknown")
+                                    </span>
+                                </div>
+                                @if (payment.PaidAt.HasValue)
+                                {
+                                    <div class="payment-row">
+                                        <span class="payment-label">Paid At:</span>
+                                        <span class="payment-value">@payment.PaidAt.Value.ToString("MMMM dd, yyyy 'at' h:mm tt")</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column -->
+            <div class="order-sidebar">
+                <!-- Customer Information -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Customer Information</h3>
+                    </div>
+                    
+                    <div class="customer-details">
+                        <div class="customer-row">
+                            <span class="customer-label">Name:</span>
+                            <span class="customer-value">@(Model.Buyer?.Username ?? "Unknown")</span>
+                        </div>
+                        <div class="customer-row">
+                            <span class="customer-label">Email:</span>
+                            <span class="customer-value">@(Model.Buyer?.Email ?? "Not provided")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping Address -->
+                @if (Model.Address != null)
+                {
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Shipping Address</h3>
+                        </div>
+                        
+                        <div class="address-details">
+                            <div class="address-name">@(Model.Address.FullName ?? "N/A")</div>
+                            <div class="address-street">@(Model.Address.Street ?? "")</div>
+                            <div class="address-city">
+                                @(Model.Address.City ?? ""), @(Model.Address.State ?? "") @(Model.Address.Country ?? "")
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.Address.Phone))
+                            {
+                                <div class="address-phone">Phone: @Model.Address.Phone</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Order Actions -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Order Actions</h3>
+                    </div>
+                    
+                    <div class="order-actions">
+                        @if (Model.Status == "Paid")
+                        {
+                            <button type="button" class="action-btn btn-ship full-width" onclick="showShipModal(@Model.Id)">
+                                📦 Ship Order
+                            </button>
+                        }
+                        
+                        @if (Model.Status == "Pending" || Model.Status == "Paid")
+                        {
+                            <button type="button" class="action-btn btn-cancel full-width" onclick="showCancelModal(@Model.Id)">
+                                ❌ Cancel Order
+                            </button>
+                        }
+                        
+                        @if (Model.Status == "Shipped" || Model.Status == "Delivered")
+                        {
+                            <button type="button" class="action-btn full-width" onclick="showRefundModal(@Model.Id)">
+                                💰 Process Refund
+                            </button>
+                        }
+                        
+                        <div class="status-update-form">
+                            <form asp-action="UpdateStatus" method="post">
+                                <input type="hidden" name="orderId" value="@Model.Id" />
+                                <label for="status">Update Status:</label>
+                                <select name="status" class="form-control">
+                                    <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
+                                    <option value="Paid" selected="@(Model.Status == "Paid")">Paid</option>
+                                    <option value="Shipped" selected="@(Model.Status == "Shipped")">Shipped</option>
+                                    <option value="Delivered" selected="@(Model.Status == "Delivered")">Delivered</option>
+                                    <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ship Order Modal -->
+    <div id="shipModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ship Order #@Model.Id</h3>
+                <span class="close" onclick="closeModal('shipModal')">&times;</span>
+            </div>
+            <form asp-action="Ship" method="post">
+                <input type="hidden" name="orderId" value="@Model.Id" />
+                <div class="form-group">
+                    <label for="trackingNumber">Tracking Number:</label>
+                    <input type="text" id="trackingNumber" name="trackingNumber" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="carrier">Carrier:</label>
+                    <select id="carrier" name="carrier" class="form-control" required>
+                        <option value="">Select Carrier</option>
+                        <option value="UPS">UPS</option>
+                        <option value="FedEx">FedEx</option>
+                        <option value="USPS">USPS</option>
+                        <option value="DHL">DHL</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('shipModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Ship Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cancel Order Modal -->
+    <div id="cancelModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cancel Order #@Model.Id</h3>
+                <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+            </div>
+            <form asp-action="Cancel" method="post">
+                <input type="hidden" name="orderId" value="@Model.Id" />
+                <div class="form-group">
+                    <label for="reason">Cancellation Reason:</label>
+                    <textarea id="reason" name="reason" class="form-control" rows="3" placeholder="Enter reason for cancellation..."></textarea>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('cancelModal')">Close</button>
+                    <button type="submit" class="btn btn-cancel">Cancel Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Refund Modal -->
+    <div id="refundModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Process Refund for Order #@Model.Id</h3>
+                <span class="close" onclick="closeModal('refundModal')">&times;</span>
+            </div>
+            <form asp-action="ProcessRefund" method="post">
+                <input type="hidden" name="orderId" value="@Model.Id" />
+                <div class="form-group">
+                    <label for="amount">Refund Amount:</label>
+                    <input type="number" id="amount" name="amount" class="form-control" 
+                           step="0.01" min="0" max="@Model.TotalPrice" value="@Model.TotalPrice" required />
+                    <div class="input-hint">Maximum refund: $@(Model.TotalPrice?.ToString("N2") ?? "0.00")</div>
+                </div>
+                <div class="form-group">
+                    <label for="refundReason">Refund Reason:</label>
+                    <textarea id="refundReason" name="reason" class="form-control" rows="3" 
+                              placeholder="Enter reason for refund..."></textarea>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('refundModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Process Refund</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showShipModal(orderId) {
+            document.getElementById('shipModal').style.display = 'block';
+        }
+
+        function showCancelModal(orderId) {
+            document.getElementById('cancelModal').style.display = 'block';
+        }
+
+        function showRefundModal(orderId) {
+            document.getElementById('refundModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -20,18 +20,18 @@
             <!-- Navigation Tabs với Dropdown Menu -->
             <div class="tabs-container">
                 <!-- Tab thông thường -->
-                <a href="#" class="tab active">Overview</a>
+                <a href="/Seller/Overview" class="tab active">Overview</a>
 
                 <!-- Tab Orders có dropdown -->
                 <div class="tab-wrapper">
-                    <a href="#" class="tab has-dropdown">Orders</a>
+                    <a href="/Orders" class="tab has-dropdown">Orders</a>
                     <div class="dropdown-menu">
-                        <a href="#" class="dropdown-item">All orders</a>
-                        <a href="#" class="dropdown-item">Awaiting payment</a>
-                        <a href="#" class="dropdown-item">Awaiting shipment</a>
-                        <a href="#" class="dropdown-item">Paid and shipped</a>
-                        <a href="#" class="dropdown-item">Cancellations</a>
-                        <a href="#" class="dropdown-item">Returns</a>
+                        <a href="/Orders?status=all" class="dropdown-item">All orders</a>
+                        <a href="/Orders?status=awaiting-payment" class="dropdown-item">Awaiting payment</a>
+                        <a href="/Orders?status=awaiting-shipment" class="dropdown-item">Awaiting shipment</a>
+                        <a href="/Orders?status=shipped" class="dropdown-item">Paid and shipped</a>
+                        <a href="/Orders?status=cancelled" class="dropdown-item">Cancellations</a>
+                        <a href="/Orders?status=returns" class="dropdown-item">Returns</a>
                         <a href="#" class="dropdown-item">Requests and disputes</a>
                         <a href="#" class="dropdown-item">Shipping labels</a>
                     </div>

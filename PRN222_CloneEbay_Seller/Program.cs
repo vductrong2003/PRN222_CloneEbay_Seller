@@ -1,7 +1,19 @@
+using PRN222_CloneEbay_Seller.Models;
+using PRN222_CloneEbay_Seller.Services.Interfaces;
+using PRN222_CloneEbay_Seller.Services.Implementations;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Add DbContext
+builder.Services.AddDbContext<CloneEbayDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add Services
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 var app = builder.Build();
 
@@ -19,6 +31,12 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
+// Add specific route for Orders
+app.MapControllerRoute(
+    name: "orders",
+    pattern: "Orders/{action=Index}/{id?}",
+    defaults: new { controller = "Orders" });
 
 app.MapControllerRoute(
     name: "default",
