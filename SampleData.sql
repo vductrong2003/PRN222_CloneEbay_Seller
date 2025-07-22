@@ -132,6 +132,22 @@ INSERT INTO [Coupon] ([code], [discountPercent], [startDate], [endDate], [maxUsa
 ('TECH15', 15.00, '2025-07-22 00:00:00', '2025-08-01 23:59:59', 50, 2),
 ('NEWUSER20', 20.00, '2025-07-23 00:00:00', '2025-08-15 23:59:59', 200, NULL);
 
+-- Insert Return Requests
+INSERT INTO [ReturnRequest] ([orderId], [userId], [reason], [status], [createdAt]) VALUES
+(4, 3, 'Item not as described. The handbag has some scratches that were not mentioned in the listing.', 'Approved', '2025-07-21 14:30:00'),
+(7, 3, 'Changed my mind about the monitor. Would like to return within return period.', 'Processing', '2025-07-19 10:00:00'),
+(9, 5, 'Item arrived damaged during shipping. Box was crushed and iPhone screen is cracked.', 'Approved', '2025-07-17 16:45:00');
+
+-- Insert Disputes
+INSERT INTO [Dispute] ([orderId], [raisedBy], [description], [status], [resolution]) VALUES
+(2, 4, 'Order was marked as shipped but I never received tracking information. Seller is not responding to messages.', 'Open', NULL),
+(5, 4, 'Received wrong model of MacBook. Ordered 16-inch but received 14-inch model.', 'Under Review', NULL),
+(8, 4, 'Order was cancelled but refund has not been processed after 5 business days.', 'Resolved', 'Refund processed and completed. Customer notified via email.');
+
+-- Update some orders to have Return/Dispute status
+UPDATE [OrderTable] SET [status] = 'Returned' WHERE [id] = 4;
+UPDATE [OrderTable] SET [status] = 'Disputed' WHERE [id] = 2;
+
 GO
 
 PRINT 'Sample data inserted successfully!'

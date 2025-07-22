@@ -36,9 +36,9 @@
                         <a href="/Orders?status=awaiting-shipment" class="dropdown-item @(currentStatus == "awaiting-shipment" ? "active" : "")">Awaiting shipment</a>
                         <a href="/Orders?status=shipped" class="dropdown-item @(currentStatus == "shipped" ? "active" : "")">Paid and shipped</a>
                         <a href="/Orders?status=cancelled" class="dropdown-item @(currentStatus == "cancelled" ? "active" : "")">Cancellations</a>
-                        <a href="#" class="dropdown-item">Returns</a>
-                        <a href="#" class="dropdown-item">Requests and disputes</a>
-                        <a href="#" class="dropdown-item">Shipping labels</a>
+                        <a href="/Orders/Returns" class="dropdown-item @(currentStatus == "returns" ? "active" : "")">Returns</a>
+                        <a href="/Orders/Disputes" class="dropdown-item @(currentStatus == "disputes" ? "active" : "")">Requests and disputes</a>
+                        <a href="/Orders/ShippingLabels" class="dropdown-item @(currentStatus == "shipping-labels" ? "active" : "")">Shipping labels</a>
                     </div>
                 </div>
 
@@ -64,8 +64,42 @@
                     </div>
                 </div>
 
+                <!-- Tab thông thường -->
                 <a href="/Seller/Store" class="tab">Store</a>
-                <a href="/Seller/Performance" class="tab">Performance</a>
+
+                <!-- Tab Performance có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="/Seller/Performance" class="tab has-dropdown active">Performance</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Summary</a>
+                        <a href="#" class="dropdown-item">Seller level</a>
+                        <a href="#" class="dropdown-item">Sales</a>
+                        <a href="#" class="dropdown-item">Traffic</a>
+                    </div>
+                </div>
+
+                <!-- Tab Payments có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Payments</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Overview</a>
+                        <a href="#" class="dropdown-item">Payouts</a>
+                        <a href="#" class="dropdown-item">Transaction history</a>
+                    </div>
+                </div>
+
+                <!-- Tab thông thường khác -->
+                <a href="#" class="tab">Research</a>
+
+                <!-- Tab Reports có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Reports</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Sales reports</a>
+                        <a href="#" class="dropdown-item">Traffic reports</a>
+                        <a href="#" class="dropdown-item">Performance reports</a>
+                    </div>
+                </div>
 
                 <div class="right-nav">
                     <a href="#">Messages (129)</a>
@@ -89,22 +123,23 @@
             </div>
         }
 
-        <!-- Page Title with Search -->
+        <!-- Page Header with Status Filter -->
         <div class="page-header">
-            <div class="page-title">
-                Orders Management
-                @{
-                    string statusText = currentStatus switch
-                    {
-                        "awaiting-payment" => " - Awaiting Payment",
-                        "awaiting-shipment" => " - Awaiting Shipment", 
-                        "shipped" => " - Shipped",
-                        "completed" => " - Completed",
-                        "cancelled" => " - Cancelled",
-                        _ => " - All Orders"
-                    };
-                }
-                <span style="font-weight: normal; color: #767676;">@statusText</span>
+            <div class="page-title-section">
+                <h2 class="page-title">Orders Management</h2>
+                <div class="status-filter">
+                    <label for="statusFilter" class="filter-label">Filter by status:</label>
+                    <select id="statusFilter" class="status-dropdown" onchange="filterByStatus(this.value)">
+                        <option value="all" selected="@(currentStatus == "all")">📋 All Orders (@(statistics.GetValueOrDefault("Total", 0)))</option>
+                        <option value="awaiting-payment" selected="@(currentStatus == "awaiting-payment")">💳 Awaiting Payment (@(statistics.GetValueOrDefault("Pending", 0)))</option>
+                        <option value="awaiting-shipment" selected="@(currentStatus == "awaiting-shipment")">📦 Awaiting Shipment (@(statistics.GetValueOrDefault("Paid", 0)))</option>
+                        <option value="shipped" selected="@(currentStatus == "shipped")">🚚 Shipped (@(statistics.GetValueOrDefault("Shipped", 0)))</option>
+                        <option value="cancelled" selected="@(currentStatus == "cancelled")">❌ Cancelled (@(statistics.GetValueOrDefault("Cancelled", 0)))</option>
+                        <option value="returns" selected="@(currentStatus == "returns")">↩️ Returns (0)</option>
+                        <option value="disputes" selected="@(currentStatus == "disputes")">⚠️ Disputes (0)</option>
+                        <option value="shipping-labels" selected="@(currentStatus == "shipping-labels")">🏷️ Shipping Labels (0)</option>
+                    </select>
+                </div>
             </div>
             
             <!-- Search Form -->
@@ -331,6 +366,12 @@
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
             }
+        }
+
+        function filterByStatus(status) {
+            const url = new URL(window.location);
+            url.searchParams.set('status', status);
+            window.location.href = url;
         }
     </script>
 </body>

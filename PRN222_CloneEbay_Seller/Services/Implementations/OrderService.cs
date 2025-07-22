@@ -4,9 +4,35 @@ using PRN222_CloneEbay_Seller.Services.Interfaces;
 
 namespace PRN222_CloneEbay_Seller.Services.Implementations
 {
+    // Enum để định nghĩa các status hợp lệ và thứ tự chuyển đổi
+    public enum OrderStatusFlow
+    {
+        Pending = 1,        // Chờ thanh toán
+        Paid = 2,          // Đã thanh toán, chờ gửi hàng
+        Processing = 3,     // Đang chuẩn bị hàng
+        Shipped = 4,       // Đã gửi hàng
+        Delivered = 5,     // Đã giao hàng thành công
+        Cancelled = 99,    // Đã hủy (có thể từ Pending hoặc Paid)
+        Refunded = 98,     // Đã hoàn tiền
+        Returned = 97      // Đã trả hàng
+    }
+
     public class OrderService : IOrderService
     {
         private readonly CloneEbayDbContext _context;
+
+        // Định nghĩa quy tắc chuyển đổi status hợp lệ
+        private readonly Dictionary<string, List<string>> _allowedStatusTransitions = new()
+        {
+            ["Pending"] = new List<string> { "Paid", "Cancelled" },
+            ["Paid"] = new List<string> { "Processing", "Cancelled", "Refunded" },
+            ["Processing"] = new List<string> { "Shipped", "Cancelled", "Refunded" },
+            ["Shipped"] = new List<string> { "Delivered", "Returned" },
+            ["Delivered"] = new List<string>(), // ✅ KHÓA - Không cho phép chuyển từ Delivered
+            ["Cancelled"] = new List<string>(), // Không thể chuyển từ Cancelled
+            ["Refunded"] = new List<string>(), // Không thể chuyển từ Refunded
+            ["Returned"] = new List<string> { "Refunded" } // Có thể hoàn tiền sau khi trả hàng
+        };
 
         public OrderService(CloneEbayDbContext context)
         {
@@ -35,6 +61,8 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                     .ThenInclude(oi => oi.Product)
                 .Include(o => o.Payments)
                 .Include(o => o.ShippingInfos)
+                .Include(o => o.ReturnRequests)
+                .Include(o => o.Disputes)
                 .AsQueryable();
 
             switch (status.ToLower())
@@ -56,6 +84,17 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                     break;
                 case "cancelled":
                     query = query.Where(o => o.Status == "Cancelled");
+                    break;
+                case "returns":
+                case "returned":
+                    query = query.Where(o => o.ReturnRequests.Any(r => r.Status == "Approved" || r.Status == "Processing"));
+                    break;
+                case "disputes":
+                case "dispute":
+                    query = query.Where(o => o.Disputes.Any(d => d.Status == "Open" || d.Status == "Under Review"));
+                    break;
+                case "refunded":
+                    query = query.Where(o => o.Status == "Refunded");
                     break;
             }
 
@@ -104,24 +143,79 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                 .FirstOrDefaultAsync(o => o.Id == orderId);
         }
 
-        public async Task<bool> UpdateOrderStatusAsync(int orderId, string status)
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus)
         {
             var order = await _context.OrderTables.FindAsync(orderId);
-            if (order == null) return false;
+            if (order == null) 
+            {
+                return false;
+            }
 
-            order.Status = status;
+            // Validate status transition
+            var validationResult = ValidateStatusTransition(order.Status ?? "Pending", newStatus);
+            if (!validationResult.IsValid)
+            {
+                throw new InvalidOperationException(validationResult.ErrorMessage);
+            }
+
+            order.Status = newStatus;
             await _context.SaveChangesAsync();
             return true;
         }
 
+        // Method để validate việc chuyển đổi status
+        public (bool IsValid, string ErrorMessage) ValidateStatusTransition(string currentStatus, string newStatus)
+        {
+            // Kiểm tra nếu status hiện tại không tồn tại trong quy tắc
+            if (!_allowedStatusTransitions.ContainsKey(currentStatus))
+            {
+                return (false, $"Invalid current status: {currentStatus}");
+            }
+
+            // Kiểm tra nếu status mới không được phép chuyển từ status hiện tại
+            if (!_allowedStatusTransitions[currentStatus].Contains(newStatus))
+            {
+                var allowedStatuses = string.Join(", ", _allowedStatusTransitions[currentStatus]);
+                return (false, $"Cannot change from '{currentStatus}' to '{newStatus}'. Allowed transitions: {allowedStatuses}");
+            }
+
+            return (true, string.Empty);
+        }
+
+        // Method để lấy danh sách status có thể chuyển đến
+        public List<string> GetAllowedStatusTransitions(string currentStatus)
+        {
+            if (_allowedStatusTransitions.ContainsKey(currentStatus))
+            {
+                return _allowedStatusTransitions[currentStatus];
+            }
+            return new List<string>();
+        }
+
+        // Cập nhật lại ShipOrderAsync để tuân theo quy tắc
         public async Task<bool> ShipOrderAsync(int orderId, string trackingNumber, string carrier)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Update order status
                 var order = await _context.OrderTables.FindAsync(orderId);
                 if (order == null) return false;
+
+                // Kiểm tra status có thể ship không
+                var currentStatus = order.Status ?? "Pending";
+                var allowedStatuses = new[] { "Paid", "Processing" };
+                
+                if (!allowedStatuses.Contains(currentStatus))
+                {
+                    throw new InvalidOperationException($"Cannot ship order with status '{currentStatus}'. Order must be Paid or Processing.");
+                }
+
+                // Validate status transition
+                var validationResult = ValidateStatusTransition(currentStatus, "Shipped");
+                if (!validationResult.IsValid)
+                {
+                    throw new InvalidOperationException(validationResult.ErrorMessage);
+                }
 
                 order.Status = "Shipped";
 
@@ -137,7 +231,7 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                         TrackingNumber = trackingNumber,
                         Carrier = carrier,
                         Status = "Shipped",
-                        EstimatedArrival = DateTime.Now.AddDays(7) // Default 7 days
+                        EstimatedArrival = DateTime.Now.AddDays(7)
                     };
                     _context.ShippingInfos.Add(shippingInfo);
                 }
@@ -159,6 +253,7 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             }
         }
 
+        // Cập nhật lại CancelOrderAsync để tuân theo quy tắc
         public async Task<bool> CancelOrderAsync(int orderId, string reason)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -170,16 +265,22 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
 
                 if (order == null) return false;
 
-                // Only allow cancellation for pending or paid orders
-                if (order.Status != "Pending" && order.Status != "Paid") return false;
+                var currentStatus = order.Status ?? "Pending";
+                
+                // Validate status transition to Cancelled
+                var validationResult = ValidateStatusTransition(currentStatus, "Cancelled");
+                if (!validationResult.IsValid)
+                {
+                    throw new InvalidOperationException(validationResult.ErrorMessage);
+                }
 
                 order.Status = "Cancelled";
 
                 // If order was paid, create refund record
-                if (order.Status == "Paid" && order.Payments.Any())
+                if (currentStatus == "Paid" && order.Payments.Any())
                 {
                     var payment = order.Payments.First();
-                    payment.Status = "Refunded";
+                    payment.Status = "Cancelled";
                 }
 
                 await _context.SaveChangesAsync();
@@ -191,6 +292,74 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                 await transaction.RollbackAsync();
                 return false;
             }
+        }
+
+        // Method mới để chuyển status theo step-by-step
+        public async Task<bool> AdvanceOrderToNextStepAsync(int orderId)
+        {
+            var order = await _context.OrderTables.FindAsync(orderId);
+            if (order == null) return false;
+
+            var currentStatus = order.Status ?? "Pending";
+            var nextStatus = GetNextLogicalStatus(currentStatus);
+            
+            if (string.IsNullOrEmpty(nextStatus))
+            {
+                return false; // Không có step tiếp theo
+            }
+
+            return await UpdateOrderStatusAsync(orderId, nextStatus);
+        }
+
+        // Helper method để lấy status tiếp theo theo logic business
+        private string GetNextLogicalStatus(string currentStatus)
+        {
+            return currentStatus switch
+            {
+                "Pending" => "Paid",
+                "Paid" => "Processing",
+                "Processing" => "Shipped",
+                "Shipped" => "Delivered",
+                _ => string.Empty // Không có step tiếp theo
+            };
+        }
+
+        // Method để kiểm tra order có thể thực hiện action gì
+        public async Task<Dictionary<string, bool>> GetAvailableActionsAsync(int orderId)
+        {
+            var order = await _context.OrderTables.FindAsync(orderId);
+            if (order == null) return new Dictionary<string, bool>();
+
+            var currentStatus = order.Status ?? "Pending";
+            var allowedTransitions = GetAllowedStatusTransitions(currentStatus);
+
+            // ✅ KHÓA TẤT CẢ ACTIONS KHI ĐÃ DELIVERED
+            if (currentStatus == "Delivered")
+            {
+                return new Dictionary<string, bool>
+                {
+                    ["CanMarkAsPaid"] = false,
+                    ["CanStartProcessing"] = false,
+                    ["CanShip"] = false,
+                    ["CanMarkAsDelivered"] = false,
+                    ["CanCancel"] = false,
+                    ["CanRefund"] = false,
+                    ["CanReturn"] = false,
+                    ["CanAdvanceToNext"] = false
+                };
+            }
+
+            return new Dictionary<string, bool>
+            {
+                ["CanMarkAsPaid"] = currentStatus == "Pending",
+                ["CanStartProcessing"] = currentStatus == "Paid",
+                ["CanShip"] = currentStatus == "Paid" || currentStatus == "Processing",
+                ["CanMarkAsDelivered"] = currentStatus == "Shipped",
+                ["CanCancel"] = allowedTransitions.Contains("Cancelled"),
+                ["CanRefund"] = allowedTransitions.Contains("Refunded"),
+                ["CanReturn"] = allowedTransitions.Contains("Returned"),
+                ["CanAdvanceToNext"] = !string.IsNullOrEmpty(GetNextLogicalStatus(currentStatus))
+            };
         }
 
         public async Task<Dictionary<string, int>> GetOrderStatisticsAsync()
@@ -263,6 +432,276 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                 await transaction.RollbackAsync();
                 return false;
             }
+        }
+
+        public async Task<bool> ProcessReturnRequestAsync(int orderId, string reason, string action)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var order = await _context.OrderTables
+                    .Include(o => o.ReturnRequests)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+
+                if (order == null) return false;
+
+                var returnRequest = order.ReturnRequests.FirstOrDefault();
+                if (returnRequest != null)
+                {
+                    returnRequest.Status = action; // "Approved", "Rejected", "Processing"
+                }
+
+                if (action == "Approved")
+                {
+                    order.Status = "Returned";
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+        }
+
+        public async Task<bool> ResolveDisputeAsync(int orderId, string resolution, string status)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var order = await _context.OrderTables
+                    .Include(o => o.Disputes)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+
+                if (order == null) return false;
+
+                var dispute = order.Disputes.FirstOrDefault();
+                if (dispute != null)
+                {
+                    dispute.Status = status; // "Resolved", "Closed", "Under Review"
+                    dispute.Resolution = resolution;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+        }
+
+        public async Task<List<OrderTable>> GetOrdersWithReturnsAsync()
+        {
+            return await _context.OrderTables
+                .Include(o => o.Buyer)
+                .Include(o => o.Address)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.ReturnRequests)
+                .Where(o => o.ReturnRequests.Any())
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        public async Task<List<OrderTable>> GetOrdersWithDisputesAsync()
+        {
+            return await _context.OrderTables
+                .Include(o => o.Buyer)
+                .Include(o => o.Address)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.Disputes)
+                .Where(o => o.Disputes.Any())
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        // Shipping Labels Implementation
+        public async Task<List<OrderTable>> GetOrdersReadyForShippingAsync()
+        {
+            return await _context.OrderTables
+                .Include(o => o.Buyer)
+                .Include(o => o.Address)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .Include(o => o.Payments)
+                .Include(o => o.ShippingInfos)
+                .Where(o => o.Status == "Paid" && !o.ShippingInfos.Any(s => s.TrackingNumber != null))
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+        }
+
+        public async Task<bool> GenerateShippingLabelAsync(int orderId, string carrier, decimal weight, string dimensions)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var order = await _context.OrderTables
+                    .Include(o => o.Address)
+                    .Include(o => o.ShippingInfos)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+
+                if (order == null || order.Status != "Paid") return false;
+
+                // Generate tracking number (in real app, this would be from carrier API)
+                string trackingNumber = GenerateTrackingNumber(carrier);
+                
+                // Create or update shipping info
+                var shippingInfo = order.ShippingInfos.FirstOrDefault();
+                if (shippingInfo == null)
+                {
+                    shippingInfo = new ShippingInfo
+                    {
+                        OrderId = orderId,
+                        TrackingNumber = trackingNumber,
+                        Carrier = carrier,
+                        Status = "Label Created",
+                        EstimatedArrival = DateTime.Now.AddDays(GetEstimatedDays(carrier))
+                    };
+                    _context.ShippingInfos.Add(shippingInfo);
+                }
+                else
+                {
+                    shippingInfo.TrackingNumber = trackingNumber;
+                    shippingInfo.Carrier = carrier;
+                    shippingInfo.Status = "Label Created";
+                }
+
+                // Update order status to indicate label is ready
+                order.Status = "Label Created";
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                return false;
+            }
+        }
+
+        public async Task<string> GetShippingLabelUrlAsync(int orderId)
+        {
+            var order = await _context.OrderTables
+                .Include(o => o.ShippingInfos)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order?.ShippingInfos.Any() == true)
+            {
+                var trackingNumber = order.ShippingInfos.First().TrackingNumber;
+                // In real app, this would generate/retrieve actual label URL from carrier API
+                return $"/Orders/ShippingLabel/{orderId}?tracking={trackingNumber}";
+            }
+
+            return string.Empty;
+        }
+
+        public async Task<List<string>> GenerateBulkShippingLabelsAsync(List<int> orderIds, string carrier)
+        {
+            var labels = new List<string>();
+            
+            foreach (var orderId in orderIds)
+            {
+                var success = await GenerateShippingLabelAsync(orderId, carrier, 1.0m, "10x10x10");
+                if (success)
+                {
+                    var labelUrl = await GetShippingLabelUrlAsync(orderId);
+                    labels.Add(labelUrl);
+                }
+            }
+            
+            return labels;
+        }
+
+        public Task<decimal> CalculateShippingCostAsync(int orderId, string carrier, decimal weight, string dimensions)
+        {
+            // Basic shipping cost calculation based on weight and carrier
+            decimal baseCost = 5.00m; // Base shipping cost
+            decimal weightCost = weight * 0.5m; // $0.50 per unit weight
+            
+            // Carrier-specific multipliers
+            decimal carrierMultiplier = carrier.ToLower() switch
+            {
+                "fedex" => 1.2m,
+                "ups" => 1.1m,
+                "usps" => 1.0m,
+                "dhl" => 1.3m,
+                _ => 1.0m
+            };
+            
+            return Task.FromResult((baseCost + weightCost) * carrierMultiplier);
+        }
+
+        // Implementation of missing interface methods
+        public async Task<List<OrderTable>> GetOrdersBySellerAsync(int sellerId)
+        {
+            return await GetOrdersBySellerIdAsync(sellerId);
+        }
+
+        public async Task<OrderTable> GetOrderDetailsByIdAsync(int orderId)
+        {
+            var order = await GetOrderDetailsAsync(orderId);
+            return order ?? throw new InvalidOperationException($"Order with ID {orderId} not found");
+        }
+
+        public async Task<List<Review>> GetOrderProductReviewsByBuyerAsync(int orderId)
+        {
+            // Since Review doesn't have OrderId, we need to get reviews through the order's products
+            var order = await _context.OrderTables
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order == null)
+                return new List<Review>();
+
+            var reviews = new List<Review>();
+            foreach (var orderItem in order.OrderItems)
+            {
+                if (orderItem.Product != null)
+                {
+                    var productReviews = await _context.Reviews
+                        .Include(r => r.Reviewer)
+                        .Where(r => r.ProductId == orderItem.Product.Id)
+                        .ToListAsync();
+                    reviews.AddRange(productReviews);
+                }
+            }
+
+            return reviews;
+        }
+
+        // Helper methods
+        private string GenerateTrackingNumber(string carrier)
+        {
+            var random = new Random();
+            return carrier.ToUpper() switch
+            {
+                "USPS" => $"9405{random.Next(100000000, 999999999)}",
+                "FEDEX" => $"FDX{random.Next(100000000, 999999999)}",
+                "UPS" => $"1Z{random.Next(100000000, 999999999)}",
+                "DHL" => $"DHL{random.Next(100000000, 999999999)}",
+                _ => $"TRK{random.Next(100000000, 999999999)}"
+            };
+        }
+
+        private int GetEstimatedDays(string carrier)
+        {
+            return carrier.ToLower() switch
+            {
+                "usps" => 3,
+                "fedex" => 2,
+                "ups" => 3,
+                "dhl" => 1,
+                _ => 5
+            };
         }
     }
 }

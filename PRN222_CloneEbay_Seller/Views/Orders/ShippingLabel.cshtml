@@ -1,0 +1,369 @@
+@model PRN222_CloneEbay_Seller.Models.OrderTable
+@{
+    ViewData["Title"] = $"Shipping Label - Order #{Model.Id}";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="shipping-label-container">
+        <div class="label-header">
+            <h2>Shipping Label</h2>
+            <div class="label-actions">
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="fas fa-print"></i> Print Label
+                </button>
+                <button onclick="downloadLabel()" class="btn btn-secondary">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Order
+                </a>
+            </div>
+        </div>
+
+        <!-- Shipping Label -->
+        <div class="shipping-label" id="shippingLabel">
+            <!-- Carrier Logo and Info -->
+            <div class="label-section carrier-section">
+                <div class="carrier-info">
+                    <div class="carrier-logo">
+                        @{
+                            var carrierName = Model.ShippingInfos.FirstOrDefault()?.Carrier ?? "STANDARD";
+                        }
+                        <img src="~/images/carriers/@(carrierName.ToLower()).png" alt="@carrierName" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div class="carrier-text" style="display:none;">@carrierName.ToUpper()</div>
+                    </div>
+                    <div class="service-type">GROUND</div>
+                </div>
+                <div class="tracking-section">
+                    <div class="tracking-label">TRACKING NUMBER</div>
+                    <div class="tracking-number">@ViewBag.TrackingNumber</div>
+                    <div class="tracking-barcode">
+                        <svg width="200" height="40">
+                            <!-- Simple barcode representation -->
+                            @for (int i = 0; i < 20; i++)
+                            {
+                                var width = (i % 3 == 0) ? 3 : 1;
+                                var x = i * 10;
+                                <rect x="@x" y="0" width="@width" height="40" fill="black"/>
+                            }
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- From Address -->
+            <div class="label-section from-section">
+                <div class="section-title">FROM:</div>
+                <div class="address-block">
+                    <div class="company-name">VD Electronics Store</div>
+                    <div class="address-line">123 Seller Street</div>
+                    <div class="address-line">Vietnam, 70000</div>
+                    <div class="contact-info">Tel: +84-123-456-789</div>
+                </div>
+            </div>
+
+            <!-- To Address -->
+            <div class="label-section to-section">
+                <div class="section-title">TO:</div>
+                <div class="address-block large">
+                    <div class="recipient-name">@Model.Address?.FullName</div>
+                    <div class="address-line">@Model.Address?.Street</div>
+                    <div class="address-line">@Model.Address?.City, @Model.Address?.State</div>
+                    <div class="address-line">@Model.Address?.Country</div>
+                    <div class="contact-info">@Model.Address?.Phone</div>
+                </div>
+            </div>
+
+            <!-- Package Info -->
+            <div class="label-section package-section">
+                <div class="package-info">
+                    <div class="info-item">
+                        <span class="label">Weight:</span>
+                        <span class="value">1.0 lbs</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Dimensions:</span>
+                        <span class="value">10" x 8" x 6"</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Ship Date:</span>
+                        <span class="value">@DateTime.Now.ToString("MM/dd/yyyy")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Order #:</span>
+                        <span class="value">@Model.Id</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="label-section qr-section">
+                <div class="qr-code">
+                    <svg width="80" height="80" viewBox="0 0 80 80">
+                        <!-- Simple QR code representation -->
+                        @for (int i = 0; i < 8; i++)
+                        {
+                            for (int j = 0; j < 8; j++)
+                            {
+                                if ((i + j) % 2 == 0)
+                                {
+                                    <rect x="@(i*10)" y="@(j*10)" width="10" height="10" fill="black"/>
+                                }
+                            }
+                        }
+                    </svg>
+                </div>
+                <div class="qr-label">Scan for tracking</div>
+            </div>
+
+            <!-- Order Items Summary -->
+            <div class="label-section items-section">
+                <div class="section-title">ITEMS:</div>
+                <div class="items-list">
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <div class="item-row">
+                            <span class="item-qty">@item.Quantity x</span>
+                            <span class="item-name">@item.Product?.Title</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="label-footer">
+                <div class="footer-text">
+                    This label was created on @DateTime.Now.ToString("MM/dd/yyyy HH:mm") • 
+                    Questions? Contact seller at support@vdelectronics.com
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+
+
+.shipping-label-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.label-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e5e5e5;
+}
+
+.label-header h2 {
+    margin: 0;
+    color: #333;
+}
+
+.label-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.shipping-label {
+    border: 2px solid #000;
+    padding: 20px;
+    background: white;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.label-section {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+}
+
+.carrier-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #000;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.carrier-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.carrier-logo img {
+    height: 40px;
+    max-width: 120px;
+}
+
+.carrier-text {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000;
+}
+
+.service-type {
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.tracking-section {
+    text-align: right;
+}
+
+.tracking-label {
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.tracking-number {
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 10px;
+}
+
+.tracking-barcode {
+    margin-top: 5px;
+}
+
+.section-title {
+    font-weight: bold;
+    font-size: 11px;
+    margin-bottom: 8px;
+    color: #000;
+}
+
+.address-block {
+    border: 1px solid #000;
+    padding: 10px;
+    background: #f9f9f9;
+}
+
+.address-block.large {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.company-name,
+.recipient-name {
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+.recipient-name {
+    font-size: 16px;
+}
+
+.address-line {
+    margin-bottom: 2px;
+}
+
+.contact-info {
+    font-size: 11px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.package-section {
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+.package-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+}
+
+.info-item .label {
+    font-weight: bold;
+}
+
+.qr-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+.qr-code {
+    border: 1px solid #000;
+    padding: 5px;
+    background: white;
+}
+
+.qr-label {
+    font-size: 10px;
+    margin-top: 5px;
+    text-align: center;
+}
+
+.items-section {
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+
+.items-list {
+    max-height: 60px;
+    overflow: hidden;
+}
+
+.item-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 2px;
+    font-size: 11px;
+}
+
+.item-qty {
+    font-weight: bold;
+    min-width: 30px;
+}
+
+.item-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.label-footer {
+    border-top: 1px solid #ccc;
+    padding-top: 8px;
+    margin-top: 15px;
+}
+
+.footer-text {
+    font-size: 9px;
+    color: #666;
+    text-align: center;
+    line-height: 1.2;
+}
+</style>
+
+<script>
+function downloadLabel() {
+    // In a real application, this would generate and download a PDF
+    // For now, we'll just show an alert
+    alert('PDF download functionality would be implemented here.\nIn a real app, this would generate a PDF of the shipping label.');
+}
+</script>

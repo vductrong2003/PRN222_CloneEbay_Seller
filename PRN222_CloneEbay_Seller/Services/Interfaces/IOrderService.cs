@@ -16,5 +16,27 @@ namespace PRN222_CloneEbay_Seller.Services.Interfaces
         Task<decimal> GetTotalRevenueAsync();
         Task<List<OrderTable>> GetRecentOrdersAsync(int count = 10);
         Task<bool> ProcessRefundAsync(int orderId, decimal amount, string reason);
+        
+        // Return and Dispute management
+        Task<bool> ProcessReturnRequestAsync(int orderId, string reason, string action);
+        Task<bool> ResolveDisputeAsync(int orderId, string resolution, string status);
+        Task<List<OrderTable>> GetOrdersWithReturnsAsync();
+        Task<List<OrderTable>> GetOrdersWithDisputesAsync();
+
+        // Shipping Labels management
+        Task<List<OrderTable>> GetOrdersReadyForShippingAsync();
+        Task<bool> GenerateShippingLabelAsync(int orderId, string carrier, decimal weight, string dimensions);
+        Task<string> GetShippingLabelUrlAsync(int orderId);
+        Task<List<string>> GenerateBulkShippingLabelsAsync(List<int> orderIds, string carrier);
+        Task<decimal> CalculateShippingCostAsync(int orderId, string carrier, decimal weight, string dimensions);
+
+        // Status Validation and Management - New Methods
+        (bool IsValid, string ErrorMessage) ValidateStatusTransition(string currentStatus, string newStatus);
+        List<string> GetAllowedStatusTransitions(string currentStatus);
+        Task<bool> AdvanceOrderToNextStepAsync(int orderId);
+        Task<Dictionary<string, bool>> GetAvailableActionsAsync(int orderId);
+        Task<List<OrderTable>> GetOrdersBySellerAsync(int sellerId);
+        Task<OrderTable> GetOrderDetailsByIdAsync(int orderId);
+        Task<List<Review>> GetOrderProductReviewsByBuyerAsync(int orderId);
     }
 }
