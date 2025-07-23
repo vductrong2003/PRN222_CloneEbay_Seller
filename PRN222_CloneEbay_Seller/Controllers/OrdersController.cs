@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using PRN222_CloneEbay_Seller.Services.Interfaces;
 
 namespace PRN222_CloneEbay_Seller.Controllers
@@ -7,11 +7,13 @@ namespace PRN222_CloneEbay_Seller.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IAccountService _accountService;
+        private readonly IDisputeService _disputeService;
 
-        public OrdersController(IOrderService orderService, IAccountService accountService)
+        public OrdersController(IOrderService orderService, IDisputeService disputeService, IAccountService accountService)
         {
             _orderService = orderService;
             _accountService = accountService;
+            _disputeService = disputeService;
         }
 
         private async Task<bool> CheckSellerAccessAsync()
@@ -258,6 +260,59 @@ namespace PRN222_CloneEbay_Seller.Controllers
             {
                 return Json(new { success = false, message = "An error occurred while processing the refund." });
             }
+        }
+
+        // GET: /Orders/Disputes
+        public async Task<IActionResult> Disputes()
+        {
+            var sellerId = 1; // Giả định
+            var disputes = await _disputeService.GetDisputesForSellerAsync(sellerId);
+            return View(disputes);
+        }
+
+        // GET: /Orders/DisputeDetails/5
+        public async Task<IActionResult> DisputeDetails(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var sellerId = 1; // Giả định
+            var dispute = await _disputeService.GetDisputeDetailsAsync(id.Value, sellerId);
+
+            if (dispute == null)
+            {
+                return NotFound();
+            }
+
+            return View(dispute);
+        }
+
+        // POST: /Orders/ResolveDispute
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResolveDispute(int disputeId, string resolution)
+        {
+            if (string.IsNullOrWhiteSpace(resolution))
+            {
+                TempData["Error"] = "Resolution description cannot be empty.";
+                return RedirectToAction("DisputeDetails", new { id = disputeId });
+            }
+
+            var sellerId = 1; // Giả định
+            var success = await _disputeService.ResolveDisputeAsync(disputeId, resolution, sellerId);
+
+            if (success)
+            {
+                TempData["Success"] = "Dispute has been successfully resolved.";
+            }
+            else
+            {
+                TempData["Error"] = "Failed to resolve dispute. It may not exist or you don't have permission.";
+            }
+
+            return RedirectToAction("DisputeDetails", new { id = disputeId });
         }
     }
 }

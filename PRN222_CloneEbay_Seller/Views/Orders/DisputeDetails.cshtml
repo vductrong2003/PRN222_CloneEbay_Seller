@@ -1,0 +1,130 @@
+﻿@model PRN222_CloneEbay_Seller.Models.Dispute
+
+@{
+    ViewData["Title"] = $"Dispute for Order #{Model.Order.Id}";
+}
+
+<!-- ======================= BẮT ĐẦU PHẦN CSS SỬA LỖI ======================= -->
+<style>
+    /* Style mới cho status text, không có màu nền */
+    .status-text-simple {
+        font-weight: 600;
+        color: #555; /* Một màu xám đậm để dễ đọc */
+        vertical-align: middle;
+        text-transform: uppercase;
+        margin-left: 8px; /* Khoảng cách với tiêu đề */
+    }
+</style>
+<!-- ======================== KẾT THÚC PHẦN CSS SỬA LỖI ======================= -->
+
+
+<div class="container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="/Orders/Disputes">Requests and Disputes</a> > Dispute #@Model.Id
+    </div>
+
+    <!-- Status Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="status-message status-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="status-message status-error">@TempData["Error"]</div>
+    }
+
+    <!-- Header -->
+    <div class="order-details-header">
+        <div class="order-title">
+            <h1>Dispute Details</h1>
+
+            <!-- ======================= PHẦN HIỂN THỊ STATUS ĐÃ ĐƯỢC CẬP NHẬT ======================= -->
+            <span class="status-text-simple">
+                STATUS: @(Model.Status?.ToUpper() ?? "UNKNOWN")
+            </span>
+            <!-- ======================= KẾT THÚC PHẦN CẬP NHẬT ======================= -->
+        </div>
+    </div>
+
+
+    <div class="order-details-grid">
+        <!-- Left Column: Thông tin chính -->
+        <div class="order-main-content">
+            <!-- Panel Khiếu nại của người mua -->
+            <div class="panel">
+                <div class="panel-header"><h3 class="panel-title">Buyer's Complaint</h3></div>
+                <div class="customer-details" style="padding: 20px;">
+                    <div class="customer-row">
+                        <span class="customer-label">Raised by:</span>
+                        <span class="customer-value">@(Model.RaisedByNavigation?.Username ?? "N/A")</span>
+                    </div>
+                    <div class="customer-row" style="align-items: flex-start;">
+                        <span class="customer-label">Issue:</span>
+                        <span class="customer-value" style="white-space: pre-wrap;">@Model.Description</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Các sản phẩm liên quan -->
+            <div class="panel">
+                <div class="panel-header"><h3 class="panel-title">Items in Order #@Model.Order.Id</h3></div>
+                <div class="order-items-details">
+                    @foreach (var item in Model.Order.OrderItems)
+                    {
+                        <div class="order-item-detail">
+                            <div class="item-image">
+                                @if (!string.IsNullOrEmpty(item.Product?.Images))
+                                {
+                                    <img src="@item.Product.Images.Split(',').FirstOrDefault()" alt="@item.Product.Title" />
+                                }
+                                else
+                                {
+                                    <div class="no-image">📦</div>
+                                }
+                            </div>
+                            <div class="item-info">
+                                <div class="item-title">@(item.Product?.Title ?? "Unknown Product")</div>
+                                <div class="item-pricing">
+                                    <span class="item-price">$@(item.UnitPrice?.ToString("N2"))</span>
+                                    <span class="item-qty">Qty: @item.Quantity</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Hành động của người bán -->
+        <div class="order-sidebar">
+            <div class="panel">
+                <div class="panel-header"><h3 class="panel-title">Resolution</h3></div>
+                <div class="order-actions">
+                    @if (Model.Status?.ToLower() == "resolved")
+                    {
+                        <div class="delivered-notice" style="text-align: left;">
+                            <div class="delivered-icon">✅</div>
+                            <h4 class="delivered-title">Dispute Resolved</h4>
+                            <p><strong>Your provided resolution:</strong></p>
+                            <p style="white-space: pre-wrap;">"@Model.Resolution"</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-action="ResolveDispute" method="post">
+                            <input type="hidden" name="disputeId" value="@Model.Id" />
+                            <div class="form-group">
+                                <label for="resolution" class="form-label">Provide Your Resolution</label>
+                                <textarea name="resolution" class="form-control" rows="6" placeholder="Explain your position and propose a resolution to the buyer."></textarea>
+                            </div>
+                            <button type="submit" class="action-btn btn-ship full-width" style="margin-top: 1rem;">
+                                Submit Resolution
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

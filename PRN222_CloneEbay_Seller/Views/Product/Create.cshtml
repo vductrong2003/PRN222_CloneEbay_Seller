@@ -1,0 +1,122 @@
+﻿@model PRN222_CloneEbay_Seller.Models.Product
+
+@{
+    ViewData["Title"] = "Create New Product";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+        <p class="text-muted mb-0">Fill out the details for the new product.</p>
+    </div>
+    <div class="card-body">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label"></label>
+                        <input asp-for="Title" class="form-control" placeholder="e.g., Apple iPhone 15 Pro" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Price" class="form-label"></label>
+                        <input asp-for="Price" type="number" step="0.01" class="form-control" placeholder="e.g., 999.99" />
+                        <span asp-validation-for="Price" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Images" class="form-label">Image URL</label>
+                        <input asp-for="Images" class="form-control" placeholder="Enter image URL" />
+                        <span asp-validation-for="Images" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label asp-for="CategoryId" class="form-label">Category</label>
+                        <select asp-for="CategoryId" class="form-select" asp-items="ViewBag.CategoryId">
+                            <option value="">-- Select a Category --</option>
+                        </select>
+                        <span asp-validation-for="CategoryId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="SellerId" class="form-label">Seller</label>
+                        <select asp-for="SellerId" class="form-select" asp-items="ViewBag.SellerId">
+                            <option value="">-- Select a Seller --</option>
+                        </select>
+                        <span asp-validation-for="SellerId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="Provide a detailed description of the product."></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Listing Type Fields -->
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- THAY ĐỔI CHÍNH Ở ĐÂY: Sử dụng <select> thay vì checkbox -->
+                    <div class="mb-3">
+                        <label asp-for="IsAuction" class="form-label">Listing Type</label>
+                        <select asp-for="IsAuction" class="form-select" id="listingTypeSelect">
+                            <option value="">-- Please select a listing type --</option>
+                            <option value="false">Fixed Price</option>
+                            <option value="true">Auction</option>
+                        </select>
+                        <span asp-validation-for="IsAuction" class="text-danger"></span>
+                    </div>
+
+                    <div id="auctionEndTimeGroup" class="mb-3" style="display: none;">
+                        <label asp-for="AuctionEndTime" class="form-label"></label>
+                        <input asp-for="AuctionEndTime" class="form-control" />
+                        <span asp-validation-for="AuctionEndTime" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <input type="submit" value="Create Product" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary ms-2">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        // Cập nhật script để làm việc với dropdown
+        document.addEventListener('DOMContentLoaded', function () {
+            const listingTypeSelect = document.getElementById('listingTypeSelect');
+            const auctionEndTimeGroup = document.getElementById('auctionEndTimeGroup');
+
+            function toggleAuctionTime() {
+                // Hiển thị trường Auction End Time chỉ khi giá trị của dropdown là "true"
+                if (listingTypeSelect.value === 'true') {
+                    auctionEndTimeGroup.style.display = 'block';
+                } else {
+                    auctionEndTimeGroup.style.display = 'none';
+                }
+            }
+
+            // Chạy khi trang tải xong
+            toggleAuctionTime();
+
+            // Chạy mỗi khi người dùng thay đổi lựa chọn trong dropdown
+            listingTypeSelect.addEventListener('change', toggleAuctionTime);
+        });
+    </script>
+}

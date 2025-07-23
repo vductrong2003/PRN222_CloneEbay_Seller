@@ -1,11 +1,18 @@
-using PRN222_CloneEbay_Seller.Models;
+﻿using PRN222_CloneEbay_Seller.Models;
 using PRN222_CloneEbay_Seller.Services.Interfaces;
 using PRN222_CloneEbay_Seller.Services.Implementations;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Lấy chuỗi kết nối từ appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Đăng ký DbContext với DI container
+builder.Services.AddDbContext<CloneEbayDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Thêm các dịch vụ khác cho controller và view
 builder.Services.AddControllersWithViews();
 
 // Add session services
@@ -27,6 +34,12 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddScoped<IDisputeService, DisputeService>();
+// Đăng ký EmailSettings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+// Đăng ký các services
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IOverviewService, OverviewService>();
 
 var app = builder.Build();
@@ -35,7 +48,6 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

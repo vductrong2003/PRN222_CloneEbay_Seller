@@ -1,0 +1,124 @@
+﻿@model List<PRN222_CloneEbay_Seller.Models.Coupon>
+@{
+    ViewData["Title"] = "Promotions Management";
+}
+
+<!-- ======================= SELLER HUB HEADER (BẮT ĐẦU) ======================= -->
+<div class="seller-hub-header">
+    <div class="seller-hub-title">
+        <h1>Seller Hub</h1>
+        <span class="seller-id">(2,431)</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+        <a href="/Seller/Overview" class="tab">Overview</a>
+
+        <!-- Tab Orders (không active) -->
+        <div class="tab-wrapper">
+            <a href="/Orders" class="tab has-dropdown">Orders</a>
+            <div class="dropdown-menu">
+                <a href="/Orders?status=all" class="dropdown-item">All orders</a>
+                <a href="/Orders?status=awaiting-payment" class="dropdown-item">Awaiting payment</a>
+                <a href="/Orders?status=awaiting-shipment" class="dropdown-item">Awaiting shipment</a>
+                <a href="/Orders?status=shipped" class="dropdown-item">Paid and shipped</a>
+                <a href="/Orders?status=cancelled" class="dropdown-item">Cancellations</a>
+                <a href="/Orders/Returns" class="dropdown-item">Returns</a>
+            </div>
+        </div>
+
+        <!-- Tab Listings -->
+        <div class="tab-wrapper">
+            <a href="#" class="tab has-dropdown">Listings</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Create listing</a>
+                <a href="#" class="dropdown-item">Active</a>
+            </div>
+        </div>
+
+        <!-- Tab Marketing -->
+        <div class="tab-wrapper">
+            <a href="#" class="tab has-dropdown">Marketing</a>
+            <div class="dropdown-menu">
+                <a href="/Coupon" class="dropdown-item">Promotions</a>
+            </div>
+        </div>
+
+        <!-- Tab Store -->
+        <a href="/Stores" class="tab">Store</a>
+
+        <!-- Tab Performance -->
+        <div class="tab-wrapper">
+            <a href="/Performance" class="tab has-dropdown">Performance</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Summary</a>
+                <a href="#" class="dropdown-item">Sales</a>
+            </div>
+        </div>
+
+        <!-- ✅✅✅ Tab Payments có dropdown - ĐÃ THÊM CLASS 'active' ✅✅✅ -->
+        <div class="tab-wrapper">
+            <a href="/Payment" class="tab has-dropdown active">Payments</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Overview</a>
+                <a href="#" class="dropdown-item">Payouts</a>
+                <a href="/Payment" class="dropdown-item active">Transaction history</a>
+            </div>
+        </div>
+
+        <!-- Other tabs -->
+        <a href="#" class="tab">Research</a>
+        <div class="tab-wrapper">
+            <a href="#" class="tab has-dropdown">Reports</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Sales reports</a>
+            </div>
+        </div>
+
+        <div class="right-nav">
+            <a href="#">Messages (129)</a>
+        </div>
+    </div>
+</div>
+<!-- ======================== SELLER HUB HEADER (KẾT THÚC) ======================= -->
+
+<div class="container">
+    <div class="page-header">
+        <h2 class="page-title">@ViewData["Title"]</h2>
+        <a asp-action="Create" class="btn btn-primary">Create New Coupon</a>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h3 class="panel-title">Coupon List</h3></div>
+        <div class="orders-table">
+            <div class="orders-table-header">
+                <div>Code</div>
+                <div>Discount</div>
+                <div>Applied to Product</div>
+                <div>Effective Dates</div>
+                <div>Status</div>
+                <div>Actions</div>
+            </div>
+            @foreach (var coupon in Model)
+            {
+                <div class="order-row">
+                    <div><strong>@coupon.Code</strong></div>
+                    <div>@coupon.DiscountPercent?.ToString("0.##")%</div>
+                    <div>@(coupon.Product?.Title ?? "N/A")</div>
+                    <div>@coupon.StartDate?.ToString("d") - @coupon.EndDate?.ToString("d")</div>
+                    <div>
+                        @{
+                            var status = (DateTime.Now >= coupon.StartDate && DateTime.Now <= coupon.EndDate) ? "Active" : "Inactive";
+                            var statusClass = status == "Active" ? "status-delivered" : "status-cancelled";
+                        }
+                        <span class="status-badge @statusClass">@status</span>
+                    </div>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@coupon.Id" class="action-btn">Edit</a>
+                        <!-- Thêm nút Delete nếu cần -->
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
