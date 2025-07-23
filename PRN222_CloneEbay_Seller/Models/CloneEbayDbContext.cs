@@ -473,10 +473,16 @@ public partial class CloneEbayDbContext : DbContext
                 .HasColumnName("password");
             entity.Property(e => e.Role)
                 .HasMaxLength(20)
-                .HasColumnName("role");
+                .HasColumnName("role")
+                .HasDefaultValue("User");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasColumnName("status")
+                .HasDefaultValue("Active");
             entity.Property(e => e.Username)
                 .HasMaxLength(100)
                 .HasColumnName("username");
+
         });
 
         OnModelCreatingPartial(modelBuilder);

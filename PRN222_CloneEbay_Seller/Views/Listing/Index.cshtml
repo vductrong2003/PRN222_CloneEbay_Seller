@@ -334,6 +334,9 @@
                                     <a href="@Url.Action("Details", new { id = product.Id })" class="action-btn btn-view" title="View Details">
                                         <span class="btn-icon">👁️</span>
                                     </a>
+                                    <a href="@Url.Action("Edit", new { id = product.Id })" class="action-btn btn-edit" title="Edit Product">
+                                        <span class="btn-icon">✏️</span>
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -839,12 +842,6 @@
 
         .stock-content {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.2rem;
-        }
-
-        .stock-info, .sold-info {
             display: flex;
             gap: 0.3rem;
             align-items: center;

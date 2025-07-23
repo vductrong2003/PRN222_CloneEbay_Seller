@@ -13,9 +13,13 @@ public partial class User
 
     public string? Password { get; set; }
 
-    public string? Role { get; set; }
+    public string? Role { get; set; } // User, Seller, Admin
+
+    public string? Status { get; set; } // Active, Pending, Suspended, Rejected
 
     public string? AvatarUrl { get; set; }
+
+
 
     public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();
 
@@ -40,4 +44,5 @@ public partial class User
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
     public virtual ICollection<Store> Stores { get; set; } = new List<Store>();
+
 }

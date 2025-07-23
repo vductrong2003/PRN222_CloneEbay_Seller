@@ -138,7 +138,7 @@
                         <option value="awaiting-shipment" selected="@(currentStatus == "awaiting-shipment")">📦 Awaiting Shipment (@(statistics.GetValueOrDefault("Paid", 0)))</option>
                         <option value="shipped" selected="@(currentStatus == "shipped")">🚚 Shipped (@(statistics.GetValueOrDefault("Shipped", 0)))</option>
                         <option value="cancelled" selected="@(currentStatus == "cancelled")">❌ Cancelled (@(statistics.GetValueOrDefault("Cancelled", 0)))</option>
-                        <option value="returns" selected="@(currentStatus == "returns")">↩️ Returns (0)</option>
+                        <option value="returned" selected="@(currentStatus == "returned")">↩️ Returns (0)</option>
                         <option value="disputes" selected="@(currentStatus == "disputes")">⚠️ Disputes (0)</option>
                         <option value="shipping-labels" selected="@(currentStatus == "shipping-labels")">🏷️ Shipping Labels (0)</option>
                     </select>

@@ -31,7 +31,7 @@ namespace PRN222_CloneEbay_Seller.Models
         public decimal AverageOrdersPerDay { get; set; }
     }
 
-    public class TopProductViewModel
+    public class TopPerformingProductViewModel
     {
         public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;

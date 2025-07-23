@@ -467,9 +467,52 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
         public async Task<List<Product>> GetDraftsBySellerIdAsync(int sellerId)
         {
             return await _context.Products
+                .Include(p => p.Category)
                 .Where(p => p.SellerId == sellerId && p.Status == "Draft")
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
+        }
+
+        public async Task<List<Review>> GetProductReviewsAsync(int productId)
+        {
+            try
+            {
+                return await _context.Reviews
+                    .Include(r => r.Reviewer)
+                    .Include(r => r.Product)
+                    .Where(r => r.ProductId == productId)
+                    .OrderByDescending(r => r.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetProductReviewsAsync: {ex.Message}");
+                return new List<Review>();
+            }
+        }
+
+        public async Task<List<Product>> GetRelatedProductsAsync(int productId, int count = 4)
+        {
+            try
+            {
+                var product = await _context.Products.FindAsync(productId);
+                if (product == null) return new List<Product>();
+
+                return await _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.Id != productId && 
+                               p.CategoryId == product.CategoryId && 
+                               p.Status == "Active" &&
+                               p.SellerId == product.SellerId)
+                    .OrderByDescending(p => p.Id)
+                    .Take(count)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetRelatedProductsAsync: {ex.Message}");
+                return new List<Product>();
+            }
         }
     }
 }

@@ -15,15 +15,24 @@ builder.Services.AddDbContext<CloneEbayDbContext>(options =>
 // Thêm các dịch vụ khác cho controller và view
 builder.Services.AddControllersWithViews();
 
+// Add session services
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Add DbContext
 builder.Services.AddDbContext<CloneEbayDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Services
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IDisputeService, DisputeService>();
 // Đăng ký EmailSettings
@@ -31,6 +40,7 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 
 // Đăng ký các services
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IOverviewService, OverviewService>();
 
 var app = builder.Build();
 
@@ -46,7 +56,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Add session middleware
+app.UseSession();
+
 app.UseAuthorization();
+
+// Add specific route for Account
+app.MapControllerRoute(
+    name: "account",
+    pattern: "Account/{action=Login}/{id?}",
+    defaults: new { controller = "Account" });
 
 // Add specific route for Listing
 app.MapControllerRoute(
@@ -73,6 +92,6 @@ app.MapControllerRoute(
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Orders}/{action=Index}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
