@@ -14,6 +14,9 @@ builder.Services.AddDbContext<CloneEbayDbContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IPerformanceService, PerformanceService>();
+
 
 var app = builder.Build();
 
@@ -38,8 +41,19 @@ app.MapControllerRoute(
     pattern: "Orders/{action=Index}/{id?}",
     defaults: new { controller = "Orders" });
 
+// Add specific route for Stores
+app.MapControllerRoute(
+    name: "stores",
+    pattern: "Stores/{action=Index}/{id?}",
+    defaults: new { controller = "Stores" });
+
+app.MapControllerRoute(
+    name: "performance",
+    pattern: "Performance/{action=Index}/{id?}",
+    defaults: new { controller = "Performance" });
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Seller}/{action=Overview}/{id?}");
+    pattern: "{controller=Orders}/{action=Index}/{id?}");
 
 app.Run();

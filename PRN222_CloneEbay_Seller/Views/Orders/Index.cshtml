@@ -65,11 +65,11 @@
                 </div>
 
                 <!-- Tab thông thường -->
-                <a href="/Seller/Store" class="tab">Store</a>
+                <a href="/Stores" class="tab">Store</a>
 
                 <!-- Tab Performance có dropdown -->
                 <div class="tab-wrapper">
-                    <a href="/Seller/Performance" class="tab has-dropdown active">Performance</a>
+                    <a href="/Performance" class="tab has-dropdown">Performance</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Summary</a>
                         <a href="#" class="dropdown-item">Seller level</a>
@@ -227,7 +227,7 @@
                                         {
                                             <div class="order-item">
                                                 <span class="item-name">@(item.Product?.Title ?? "Unknown Product")</span>
-                                                <span class="item-qty">x@item.Quantity</span>
+                                                <span class="item-qty">@item.Quantity</span>
                                             </div>
                                         }
                                         @if (order.OrderItems.Count > 2)

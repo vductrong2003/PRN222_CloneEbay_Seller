@@ -29,7 +29,6 @@ namespace PRN222_CloneEbay_Seller.Controllers
             return View(orders);
         }
 
-        // GET: Orders/Details/5
         public async Task<IActionResult> Details(int id)
         {
             var order = await _orderService.GetOrderDetailsAsync(id);
@@ -38,14 +37,12 @@ namespace PRN222_CloneEbay_Seller.Controllers
                 return NotFound();
             }
 
-            // Lấy reviews của buyer cho các sản phẩm trong order (nếu order đã delivered)
             var buyerReviews = await _orderService.GetOrderProductReviewsByBuyerAsync(id);
             ViewBag.BuyerReviews = buyerReviews;
 
             return View(order);
         }
 
-        // POST: Orders/Ship
         [HttpPost]
         public async Task<IActionResult> Ship(int orderId, string trackingNumber, string carrier)
         {
@@ -178,7 +175,6 @@ namespace PRN222_CloneEbay_Seller.Controllers
             }
         }
 
-        // GET: Orders/ValidateStatusChange - API endpoint to validate status change
         [HttpGet]
         public IActionResult ValidateStatusChange(string currentStatus, string newStatus)
         {
@@ -203,7 +199,6 @@ namespace PRN222_CloneEbay_Seller.Controllers
             }
         }
 
-        // GET: Orders/Recent - API endpoint for recent orders
         [HttpGet]
         public async Task<IActionResult> Recent(int count = 10)
         {
