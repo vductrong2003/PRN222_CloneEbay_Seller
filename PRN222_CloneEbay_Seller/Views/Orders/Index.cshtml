@@ -1,0 +1,378 @@
+@model List<PRN222_CloneEbay_Seller.Models.OrderTable>
+@{
+    ViewData["Title"] = "Orders Management";
+    string currentStatus = ViewBag.CurrentStatus ?? "all";
+    var statistics = ViewBag.Statistics as Dictionary<string, int> ?? new Dictionary<string, int>();
+    decimal totalRevenue = ViewBag.TotalRevenue ?? 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders | Seller Hub | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css">
+</head>
+<body>
+    <!-- Seller Hub Header -->
+    <div class="container">
+        <div class="seller-hub-header">
+            <div class="seller-hub-title">
+                <h1>Seller Hub</h1>
+                <span class="seller-id">(2,431)</span>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="tabs-container">
+                <a href="/Seller/Overview" class="tab">Overview</a>
+
+                <!-- Tab Orders có dropdown - Active -->
+                <div class="tab-wrapper">
+                    <a href="/Orders" class="tab has-dropdown active">Orders</a>
+                    <div class="dropdown-menu">
+                        <a href="/Orders?status=all" class="dropdown-item @(currentStatus == "all" ? "active" : "")">All orders</a>
+                        <a href="/Orders?status=awaiting-payment" class="dropdown-item @(currentStatus == "awaiting-payment" ? "active" : "")">Awaiting payment</a>
+                        <a href="/Orders?status=awaiting-shipment" class="dropdown-item @(currentStatus == "awaiting-shipment" ? "active" : "")">Awaiting shipment</a>
+                        <a href="/Orders?status=shipped" class="dropdown-item @(currentStatus == "shipped" ? "active" : "")">Paid and shipped</a>
+                        <a href="/Orders?status=cancelled" class="dropdown-item @(currentStatus == "cancelled" ? "active" : "")">Cancellations</a>
+                        <a href="/Orders/Returns" class="dropdown-item @(currentStatus == "returns" ? "active" : "")">Returns</a>
+                        <a href="/Orders/Disputes" class="dropdown-item @(currentStatus == "disputes" ? "active" : "")">Requests and disputes</a>
+                        <a href="/Orders/ShippingLabels" class="dropdown-item @(currentStatus == "shipping-labels" ? "active" : "")">Shipping labels</a>
+                    </div>
+                </div>
+
+                <!-- Other tabs -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Listings</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Create listing</a>
+                        <a href="#" class="dropdown-item">Active</a>
+                        <a href="#" class="dropdown-item">Unsold</a>
+                        <a href="#" class="dropdown-item">Drafts</a>
+                        <a href="#" class="dropdown-item">Scheduled</a>
+                        <a href="#" class="dropdown-item">Ended</a>
+                    </div>
+                </div>
+
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Marketing</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Promotions</a>
+                        <a href="#" class="dropdown-item">Advertising</a>
+                        <a href="#" class="dropdown-item">Email marketing</a>
+                    </div>
+                </div>
+
+                <!-- Tab thông thường -->
+                <a href="/Stores" class="tab">Store</a>
+
+                <!-- Tab Performance có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="/Performance" class="tab has-dropdown">Performance</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Summary</a>
+                        <a href="#" class="dropdown-item">Seller level</a>
+                        <a href="#" class="dropdown-item">Sales</a>
+                        <a href="#" class="dropdown-item">Traffic</a>
+                    </div>
+                </div>
+
+                <!-- Tab Payments có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Payments</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Overview</a>
+                        <a href="#" class="dropdown-item">Payouts</a>
+                        <a href="#" class="dropdown-item">Transaction history</a>
+                    </div>
+                </div>
+
+                <!-- Tab thông thường khác -->
+                <a href="#" class="tab">Research</a>
+
+                <!-- Tab Reports có dropdown -->
+                <div class="tab-wrapper">
+                    <a href="#" class="tab has-dropdown">Reports</a>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-item">Sales reports</a>
+                        <a href="#" class="dropdown-item">Traffic reports</a>
+                        <a href="#" class="dropdown-item">Performance reports</a>
+                    </div>
+                </div>
+
+                <div class="right-nav">
+                    <a href="#">Messages (129)</a>
+                    <a href="#">Comments 7</a>
+                    <a href="#">Opt out</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="status-message status-success">
+                @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="status-message status-error">
+                @TempData["Error"]
+            </div>
+        }
+
+        <!-- Page Header with Status Filter -->
+        <div class="page-header">
+            <div class="page-title-section">
+                <h2 class="page-title">Orders Management</h2>
+                <div class="status-filter">
+                    <label for="statusFilter" class="filter-label">Filter by status:</label>
+                    <select id="statusFilter" class="status-dropdown" onchange="filterByStatus(this.value)">
+                        <option value="all" selected="@(currentStatus == "all")">📋 All Orders (@(statistics.GetValueOrDefault("Total", 0)))</option>
+                        <option value="awaiting-payment" selected="@(currentStatus == "awaiting-payment")">💳 Awaiting Payment (@(statistics.GetValueOrDefault("Pending", 0)))</option>
+                        <option value="awaiting-shipment" selected="@(currentStatus == "awaiting-shipment")">📦 Awaiting Shipment (@(statistics.GetValueOrDefault("Paid", 0)))</option>
+                        <option value="shipped" selected="@(currentStatus == "shipped")">🚚 Shipped (@(statistics.GetValueOrDefault("Shipped", 0)))</option>
+                        <option value="cancelled" selected="@(currentStatus == "cancelled")">❌ Cancelled (@(statistics.GetValueOrDefault("Cancelled", 0)))</option>
+                        <option value="returns" selected="@(currentStatus == "returns")">↩️ Returns (0)</option>
+                        <option value="disputes" selected="@(currentStatus == "disputes")">⚠️ Disputes (0)</option>
+                        <option value="shipping-labels" selected="@(currentStatus == "shipping-labels")">🏷️ Shipping Labels (0)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Search Form -->
+            <div class="search-form">
+                <form asp-action="Search" method="get" class="search-controls">
+                    <input type="text" name="query" placeholder="Search by Order ID, Buyer, or Product..." 
+                           value="@ViewBag.Query" class="search-input">
+                    <input type="date" name="fromDate" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")" 
+                           class="date-input" title="From Date">
+                    <input type="date" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")" 
+                           class="date-input" title="To Date">
+                    <select name="status" class="status-select">
+                        <option value="all" selected="@(currentStatus == "all")">All Status</option>
+                        <option value="pending" selected="@(currentStatus == "pending")">Pending</option>
+                        <option value="paid" selected="@(currentStatus == "paid")">Paid</option>
+                        <option value="shipped" selected="@(currentStatus == "shipped")">Shipped</option>
+                        <option value="delivered" selected="@(currentStatus == "delivered")">Delivered</option>
+                        <option value="cancelled" selected="@(currentStatus == "cancelled")">Cancelled</option>
+                    </select>
+                    <button type="submit" class="search-btn">Search</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="cards-grid">
+            <div class="overview-card">
+                <div class="overview-card-title">Total Orders</div>
+                <div class="overview-card-value">@(statistics.GetValueOrDefault("Total", 0))</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-card-title">Awaiting Payment</div>
+                <div class="overview-card-value">@(statistics.GetValueOrDefault("Pending", 0))</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-card-title">Awaiting Shipment</div>
+                <div class="overview-card-value">@(statistics.GetValueOrDefault("Paid", 0))</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-card-title">Total Revenue</div>
+                <div class="overview-card-value">$@totalRevenue.ToString("N2")</div>
+            </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3 class="panel-title">Order List</h3>
+                <div class="panel-stats">
+                    <span class="panel-stats-number">@Model.Count</span>
+                    orders
+                </div>
+            </div>
+
+            @if (Model.Any())
+            {
+                <div class="orders-table">
+                    <div class="orders-table-header">
+                        <div class="order-col-id">Order ID</div>
+                        <div class="order-col-buyer">Buyer</div>
+                        <div class="order-col-items">Items</div>
+                        <div class="order-col-total">Total</div>
+                        <div class="order-col-status">Status</div>
+                        <div class="order-col-date">Order Date</div>
+                        <div class="order-col-actions">Actions</div>
+                    </div>
+
+                    @foreach (var order in Model)
+                    {
+                        <div class="order-row">
+                            <div class="order-col-id">
+                                <strong>#@order.Id</strong>
+                            </div>
+                            <div class="order-col-buyer">
+                                <div class="buyer-info">
+                                    <div class="buyer-name">@(order.Buyer?.Username ?? "Unknown")</div>
+                                    <div class="buyer-email">@(order.Buyer?.Email ?? "")</div>
+                                </div>
+                            </div>
+                            <div class="order-col-items">
+                                @if (order.OrderItems.Any())
+                                {
+                                    <div class="order-items-list">
+                                        @foreach (var item in order.OrderItems.Take(2))
+                                        {
+                                            <div class="order-item">
+                                                <span class="item-name">@(item.Product?.Title ?? "Unknown Product")</span>
+                                                <span class="item-qty">@item.Quantity</span>
+                                            </div>
+                                        }
+                                        @if (order.OrderItems.Count > 2)
+                                        {
+                                            <div class="more-items">+@(order.OrderItems.Count - 2) more items</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="order-col-total">
+                                <strong>$@(order.TotalPrice?.ToString("N2") ?? "0.00")</strong>
+                            </div>
+                            <div class="order-col-status">
+                                <span class="status-badge status-@(order.Status?.ToLower() ?? "unknown")">
+                                    @(order.Status ?? "Unknown")
+                                </span>
+                            </div>
+                            <div class="order-col-date">
+                                @order.OrderDate?.ToString("MMM dd, yyyy")
+                            </div>
+                            <div class="order-col-actions">
+                                <div class="action-buttons">
+                                    <a href="@Url.Action("Details", new { id = order.Id })" class="action-btn">View</a>
+                                    @if (order.Status == "Paid")
+                                    {
+                                        <button type="button" class="action-btn btn-ship" onclick="showShipModal(@order.Id)">Ship</button>
+                                    }
+                                    @if (order.Status == "Pending")
+                                    {
+                                        <button type="button" class="action-btn btn-cancel" onclick="showCancelModal(@order.Id)">Cancel</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <div class="empty-title">No orders found</div>
+                    <div class="empty-message">
+                        @{
+                            string emptyMessage = currentStatus switch
+                            {
+                                "awaiting-payment" => "You don't have any orders awaiting payment at the moment.",
+                                "awaiting-shipment" => "You don't have any orders awaiting shipment at the moment.",
+                                "shipped" => "You don't have any shipped orders at the moment.",
+                                "completed" => "You don't have any completed orders at the moment.",
+                                "cancelled" => "You don't have any cancelled orders at the moment.",
+                                _ => "You don't have any orders yet. Start selling to see your orders here!"
+                            };
+                        }
+                        @emptyMessage
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Ship Order Modal -->
+    <div id="shipModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ship Order</h3>
+                <span class="close" onclick="closeModal('shipModal')">&times;</span>
+            </div>
+            <form asp-action="Ship" method="post">
+                <input type="hidden" id="shipOrderId" name="orderId" />
+                <div class="form-group">
+                    <label for="trackingNumber">Tracking Number:</label>
+                    <input type="text" id="trackingNumber" name="trackingNumber" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="carrier">Carrier:</label>
+                    <select id="carrier" name="carrier" class="form-control" required>
+                        <option value="">Select Carrier</option>
+                        <option value="UPS">UPS</option>
+                        <option value="FedEx">FedEx</option>
+                        <option value="USPS">USPS</option>
+                        <option value="DHL">DHL</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('shipModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Ship Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cancel Order Modal -->
+    <div id="cancelModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cancel Order</h3>
+                <span class="close" onclick="closeModal('cancelModal')">&times;</span>
+            </div>
+            <form asp-action="Cancel" method="post">
+                <input type="hidden" id="cancelOrderId" name="orderId" />
+                <div class="form-group">
+                    <label for="reason">Cancellation Reason:</label>
+                    <textarea id="reason" name="reason" class="form-control" rows="3" placeholder="Enter reason for cancellation..."></textarea>
+                </div>
+                <div class="button-row">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('cancelModal')">Close</button>
+                    <button type="submit" class="btn btn-cancel">Cancel Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 eBay Clone. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function showShipModal(orderId) {
+            document.getElementById('shipOrderId').value = orderId;
+            document.getElementById('shipModal').style.display = 'block';
+        }
+
+        function showCancelModal(orderId) {
+            document.getElementById('cancelOrderId').value = orderId;
+            document.getElementById('cancelModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        function filterByStatus(status) {
+            const url = new URL(window.location);
+            url.searchParams.set('status', status);
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>

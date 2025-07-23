@@ -1,0 +1,951 @@
+@model PRN222_CloneEbay_Seller.Models.Store
+@{
+    ViewData["Title"] = $"{Model.StoreName} - Store Details";
+    var statistics = ViewBag.Statistics as Dictionary<string, object> ?? new Dictionary<string, object>();
+    var products = ViewBag.Products as List<PRN222_CloneEbay_Seller.Models.Product> ?? new List<PRN222_CloneEbay_Seller.Models.Product>();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Model.StoreName - Store Details | Seller Hub | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        /* Additional CSS fixes for Details page */
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+        .breadcrumb { margin-bottom: 20px; font-size: 14px; color: #767676; }
+        .breadcrumb a { color: #0654ba; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        
+        /* Store Details Grid - Fixed Layout */
+        .store-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 32px;
+            margin-top: 24px;
+        }
+        
+        .store-main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .store-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* Store Banner Section */
+        .store-details-header {
+            margin-bottom: 32px;
+        }
+        
+        .store-banner-section {
+            position: relative;
+            height: 370px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .store-banner-full {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .store-banner-placeholder-full {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: white;
+            text-align: center;
+        }
+        
+        .store-icon-large {
+            font-size: 64px;
+            margin-bottom: 12px;
+        }
+        
+        .store-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+            padding: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .store-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            margin: 0 0 8px 0;
+        }
+        
+        .store-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
+        .store-id {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+        
+        .store-status-badge {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: rgba(40, 167, 69, 0.9);
+            color: white;
+        }
+        
+        .store-actions-header {
+            display: flex;
+            gap: 12px;
+        }
+        
+        /* Panel Styling */
+        .panel {
+            background: white;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #f8f9fa;
+        }
+        
+        .panel-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111;
+            margin: 0;
+        }
+        
+        .performance-period {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Stats Grid - 2x3 Layout */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+            padding: 0;
+        }
+        
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 24px 16px;
+            border-right: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafbfc;
+            min-height: 120px;
+            justify-content: center;
+        }
+        
+        .stat-card:nth-child(2n) {
+            border-right: none;
+        }
+        
+        .stat-card:nth-child(5),
+        .stat-card:nth-child(6) {
+            border-bottom: none;
+        }
+        
+        .stat-card .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        /* Icon colors for different stats */
+        .stat-card:nth-child(1) .stat-icon { color: #8B4513; } /* Brown for products */
+        .stat-card:nth-child(2) .stat-icon { color: #28a745; } /* Green for active */
+        .stat-card:nth-child(3) .stat-icon { color: #6c757d; } /* Gray for orders */
+        .stat-card:nth-child(4) .stat-icon { color: #fd7e14; } /* Orange for revenue */
+        .stat-card:nth-child(5) .stat-icon { color: #ffc107; } /* Yellow for rating */
+        .stat-card:nth-child(6) .stat-icon { color: #6f42c1; } /* Purple for reviews */
+        
+        /* Store Description Section */
+        .store-description-content {
+            padding: 20px;
+        }
+        
+        .description-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+        }
+        
+        .empty-description {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .empty-description .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .product-card {
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: box-shadow 0.2s ease;
+            background: white;
+        }
+        
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .product-image {
+            height: 160px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .product-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .product-no-image {
+            color: #999;
+            font-size: 32px;
+        }
+        
+        .product-info {
+            padding: 16px;
+        }
+        
+        .product-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .product-category {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .product-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0654ba;
+            margin-bottom: 8px;
+        }
+        
+        /* Store Products Preview - Compact Layout */
+        .products-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 20px;
+        }
+        
+        .product-preview-card {
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: box-shadow 0.2s ease;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .product-preview-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .product-preview-image {
+            position: relative;
+            height: 120px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .product-preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .product-preview-no-image {
+            color: #999;
+            font-size: 24px;
+        }
+        
+        .auction-badge-overlay {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        .product-preview-info {
+            padding: 12px;
+        }
+        
+        .product-preview-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111;
+            margin: 0 0 6px 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 32px;
+        }
+        
+        .product-preview-category {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        
+        .product-preview-price {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0654ba;
+            margin-bottom: 6px;
+        }
+        
+        .auction-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .auction-status {
+            background: #fff3cd;
+            color: #856404;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .auction-end-time {
+            font-size: 10px;
+            color: #dc3545;
+            font-weight: 500;
+        }
+        
+        .products-preview-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #f0f0f0;
+            background: #fafbfc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .products-preview-summary {
+            color: #666;
+            font-size: 13px;
+            margin: 0;
+        }
+        
+        .products-preview-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        /* Panel stats styling fix */
+        .panel-stats {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .panel-stats-number {
+            font-weight: 700;
+            color: #111;
+            font-size: 16px;
+        }
+        
+        .panel-stats-text {
+            color: #767676;
+            font-size: 14px;
+        }
+        
+        /* Empty products state - improved */
+        .empty-products {
+            text-align: center;
+            padding: 40px 20px;
+            background: #fafbfc;
+        }
+        
+        .empty-products .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+        
+        .empty-products .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .empty-products .empty-message {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        .empty-products-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        /* Button improvements */
+        .btn-icon {
+            margin-right: 6px;
+            font-size: 12px;
+        }
+        
+        /* Responsive for products preview */
+        
+        
+        /* Modal styling */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #111;
+        }
+        
+        .close {
+            color: #999;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+        
+        .modal-body {
+            text-align: center;
+            padding: 24px;
+        }
+        
+        .warning-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        .warning-text {
+            color: #dc3545;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            border-top: 1px solid #e1e1e1;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #767676;
+            font-size: 12px;
+            border-top: 1px solid #e5e5e5;
+        }
+        
+        
+        
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="/Stores">Stores</a> > @Model.StoreName Details
+        </div>
+
+        <!-- Status Messages -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="status-message status-success">
+                @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="status-message status-error">
+                @TempData["Error"]
+            </div>
+        }
+
+        <!-- Store Header -->
+        <div class="store-details-header">
+            <div class="store-banner-section">
+                @if (!string.IsNullOrEmpty(Model.BannerImageUrl))
+                {
+                    <img src="@Model.BannerImageUrl" alt="@Model.StoreName banner" class="store-banner-full" />
+                }
+                else
+                {
+                    <div class="store-banner-placeholder-full">
+                        <span class="store-icon-large">🏪</span>
+                        <p class="banner-placeholder-text">No banner image</p>
+                    </div>
+                }
+                
+                <div class="store-overlay">
+                    <div class="store-title-section">
+                        <h1 class="store-title">@Model.StoreName</h1>
+                        <div class="store-meta">
+                            <span class="store-id">Store ID: #@Model.Id</span>
+                            <span class="store-status-badge active">Active</span>
+                        </div>
+                    </div>
+                    
+                    <div class="store-actions-header">
+                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary">
+                            <span class="btn-icon">✏️</span>
+                            Edit Store
+                        </a>
+                        <a href="@Url.Action("Settings", new { id = Model.Id })" class="btn btn-secondary">
+                            <span class="btn-icon">⚙️</span>
+                            Settings
+                        </a>
+                        <button type="button" class="btn btn-danger" onclick="confirmDeleteStore(@Model.Id, '@Model.StoreName')">
+                            <span class="btn-icon">🗑️</span>
+                            Delete Store
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Content Grid -->
+        <div class="store-details-grid">
+            <!-- Left Column: Store Info & Products -->
+            <div class="store-main-content">
+                <!-- Store Description -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Store Description</h3>
+                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="edit-link">
+                            <span class="edit-icon">✏️</span>
+                            Edit
+                        </a>
+                    </div>
+                    <div class="store-description-content">
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <p class="description-text">@Model.Description</p>
+                        }
+                        else
+                        {
+                            <div class="empty-description">
+                                <span class="empty-icon">📝</span>
+                                <p>No description provided. Add a description to help customers learn about your store.</p>
+                                <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-outline">Add Description</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Store Products -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Store Products</h3>
+                        <div class="panel-stats">
+                            <span class="panel-stats-number">@products.Count</span>
+                            <span class="panel-stats-text">products</span>
+                        </div>
+                    </div>
+                    
+                    @if (products.Any())
+                    {
+                        <!-- Products Preview Grid (max 6 products) -->
+                        <div class="products-preview-grid">
+                            @foreach (var product in products.Take(6))
+                            {
+                                <div class="product-preview-card">
+                                    <div class="product-preview-image">
+                                        @if (!string.IsNullOrEmpty(product.Images))
+                                        {
+                                            var firstImage = product.Images.Split(',').FirstOrDefault();
+                                            <img src="@firstImage" alt="@product.Title" class="product-preview-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="product-preview-no-image">
+                                                <span class="no-image-icon">📦</span>
+                                            </div>
+                                        }
+                                        
+                                        @if (product.IsAuction == true)
+                                        {
+                                            <div class="auction-badge-overlay">🔨</div>
+                                        }
+                                    </div>
+                                    
+                                    <div class="product-preview-info">
+                                        <h4 class="product-preview-title">@product.Title</h4>
+                                        <div class="product-preview-category">@(product.Category?.Name ?? "Electronics")</div>
+                                        <div class="product-preview-price">$@(product.Price?.ToString("N2") ?? "0.00")</div>
+                                        
+                                        @if (product.IsAuction == true && product.AuctionEndTime.HasValue && product.AuctionEndTime > DateTime.Now)
+                                        {
+                                            <div class="auction-info">
+                                                <span class="auction-status">Auction</span>
+                                                <div class="auction-end-time">
+                                                    Ends @product.AuctionEndTime.Value.ToString("MMM dd")
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Products Footer -->
+                        <div class="products-preview-footer">
+                            @if (products.Count > 6)
+                            {
+                                <p class="products-preview-summary">
+                                    Showing 6 of @products.Count products
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="products-preview-summary">
+                                    @products.Count product@(products.Count == 1 ? "" : "s") in store
+                                </p>
+                            }
+                            <div class="products-preview-actions">
+                                <a href="/Products/Store/@Model.Id" class="btn btn-outline">
+                                    <span class="btn-icon">👁️</span>
+                                    View All Products
+                                </a>
+                                <a href="/Products/Create?storeId=@Model.Id" class="btn btn-primary">
+                                    <span class="btn-icon">➕</span>
+                                    Add Product
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-products">
+                            <div class="empty-icon">📦</div>
+                            <div class="empty-title">No Products Yet</div>
+                            <div class="empty-message">
+                                Start adding products to your store to showcase your inventory to customers.
+                            </div>
+                            <div class="empty-products-actions">
+                                <a href="/Products/Create?storeId=@Model.Id" class="btn btn-primary">
+                                    <span class="btn-icon">➕</span>
+                                    Add First Product
+                                </a>
+                                <a href="/Products/Import?storeId=@Model.Id" class="btn btn-outline">
+                                    <span class="btn-icon">📥</span>
+                                    Import Products
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right Column: Statistics & Analytics -->
+            <div class="store-sidebar">
+                <!-- Store Statistics -->
+                <div class="panel" style="width: 350px;">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Store Performance</h3>
+                        <span class="performance-period">Last 30 days</span>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-content">
+                                <div class="stat-value">@(statistics.GetValueOrDefault("TotalProducts", 0))</div>
+                                <div class="stat-label">Total Products</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-content">
+                                <div class="stat-value">@(statistics.GetValueOrDefault("ActiveProducts", 0))</div>
+                                <div class="stat-label">Active Products</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">🛒</div>
+                            <div class="stat-content">
+                                <div class="stat-value">@(statistics.GetValueOrDefault("TotalOrders", 0))</div>
+                                <div class="stat-label">Total Orders</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-content">
+                                <div class="stat-value">$@(Convert.ToDecimal(statistics.GetValueOrDefault("TotalRevenue", 0)).ToString("N0"))</div>
+                                <div class="stat-label">Total Revenue</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-content">
+                                <div class="stat-value">@(statistics.GetValueOrDefault("AverageRating", 0))</div>
+                                <div class="stat-label">Avg Rating</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-value">@(statistics.GetValueOrDefault("TotalReviews", 0))</div>
+                                <div class="stat-label">Reviews</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="panel" style="width: 350px;">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Recent Activity</h3>
+                    </div>
+                    
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon pending">📦</div>
+                            <div class="activity-content">
+                                <div class="activity-title">@(statistics.GetValueOrDefault("PendingOrders", 0)) orders awaiting shipment</div>
+                                <div class="activity-time">Requires attention</div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon shipped">🚚</div>
+                            <div class="activity-content">
+                                <div class="activity-title">@(statistics.GetValueOrDefault("ShippedOrders", 0)) orders shipped</div>
+                                <div class="activity-time">In transit</div>
+                            </div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon success">✅</div>
+                            <div class="activity-content">
+                                <div class="activity-title">Store is performing well</div>
+                                <div class="activity-time">Keep up the good work!</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-footer">
+                        <a href="/Orders" class="btn btn-outline btn-sm">View All Orders</a>
+                    </div>
+                </div>
+
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Delete Store</h3>
+                <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="warning-icon">⚠️</div>
+                <p>Are you sure you want to delete the store "<span id="storeNameToDelete"></span>"?</p>
+                <p class="warning-text">This action cannot be undone. All store data will be permanently deleted.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Store</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 eBay Clone. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function confirmDeleteStore(storeId, storeName) {
+            document.getElementById('storeNameToDelete').textContent = storeName;
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                deleteStore(storeId);
+            };
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        async function deleteStore(storeId) {
+            try {
+                const response = await fetch(`/Stores/Delete/${storeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.href = '/Stores';
+                } else {
+                    alert(result.message || 'Failed to delete store');
+                }
+            } catch (error) {
+                console.error('Error deleting store:', error);
+                alert('An error occurred while deleting the store');
+            }
+            
+            closeModal('deleteModal');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

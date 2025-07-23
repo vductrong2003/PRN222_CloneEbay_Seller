@@ -1,0 +1,563 @@
+@model PRN222_CloneEbay_Seller.Models.Store
+@{
+    ViewData["Title"] = $"Edit {Model.StoreName} - Store Settings";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit @Model.StoreName - Store Settings | Seller Hub | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        /* Additional CSS fixes for Edit page */
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
+        .breadcrumb { margin-bottom: 20px; font-size: 14px; color: #767676; }
+        .breadcrumb a { color: #0654ba; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        
+        /* Page header styling */
+        .page-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            margin-bottom: 24px; 
+            gap: 24px; 
+        }
+        .page-title { 
+            font-size: 24px; 
+            font-weight: 700; 
+            color: #111; 
+            margin: 0 0 8px 0; 
+        }
+        .page-subtitle { 
+            color: #666; 
+            font-size: 14px; 
+            margin: 0; 
+        }
+        
+        /* Edit container layout */
+        .edit-container { 
+            display: grid; 
+            grid-template-columns: 1fr 320px; 
+            gap: 32px; 
+            margin-top: 24px; 
+        }
+        .edit-main-content { 
+            background: white; 
+            border: 1px solid #e5e5e5; 
+            border-radius: 8px; 
+            padding: 32px; 
+        }
+        .edit-sidebar { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+        
+        /* Form styling */
+        .form-section { 
+            margin-bottom: 40px; 
+            padding-bottom: 32px; 
+            border-bottom: 1px solid #f0f0f0; 
+        }
+        .form-section:last-child { 
+            border-bottom: none; 
+            margin-bottom: 0; 
+        }
+        .section-header { margin-bottom: 24px; }
+        .section-title { 
+            font-size: 20px; 
+            font-weight: 700; 
+            color: #111; 
+            margin: 0 0 8px 0; 
+        }
+        .section-description { color: #666; margin: 0; }
+        
+        .form-group { margin-bottom: 24px; }
+        .form-label { 
+            display: block; 
+            font-size: 14px; 
+            font-weight: 600; 
+            color: #333; 
+            margin-bottom: 8px; 
+        }
+        .form-label.required::after { content: " *"; color: #dc3545; }
+        .form-control { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid #e1e5e9; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            transition: border-color 0.2s ease; 
+        }
+        .form-control:focus { 
+            outline: none; 
+            border-color: #0654ba; 
+            box-shadow: 0 0 0 3px rgba(6, 84, 186, 0.1); 
+        }
+        
+        /* Banner upload styling */
+        .banner-input-options { margin-top: 24px; }
+        .input-option-tabs { 
+            display: flex; 
+            border-bottom: 1px solid #e5e5e5; 
+            margin-bottom: 20px; 
+        }
+        .option-tab { 
+            padding: 12px 20px; 
+            background: none; 
+            border: none; 
+            border-bottom: 3px solid transparent; 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: 500; 
+            color: #666; 
+            transition: all 0.2s ease; 
+        }
+        .option-tab.active { 
+            color: #0654ba; 
+            border-bottom-color: #0654ba; 
+        }
+        .option-tab:hover { 
+            color: #0654ba; 
+            background: #f8f9ff; 
+        }
+        
+        .banner-option { display: none; }
+        .banner-option.active { display: block; }
+        
+        .banner-upload-area { 
+            position: relative; 
+            height: 200px; 
+            border: 2px dashed #cbd5e0; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #fafbfc; 
+        }
+        .banner-upload-area:hover { 
+            border-color: #0654ba; 
+            background: #f8f9ff; 
+        }
+        
+        /* Panel styling */
+        .panel { 
+            background: white; 
+            border: 1px solid #e5e5e5; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+        }
+        .panel-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 16px; 
+        }
+        .panel-title { 
+            font-size: 16px; 
+            font-weight: 700; 
+            color: #111; 
+            margin: 0; 
+        }
+        
+        /* Button styling */
+        .btn { 
+            display: inline-block; 
+            padding: 8px 16px; 
+            font-size: 14px; 
+            font-weight: 600; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            border: none; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+        }
+        .btn-primary { background: #0654ba; color: white; }
+        .btn-primary:hover { background: #00489d; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .btn-outline { 
+            background: transparent; 
+            border: 2px solid #0654ba; 
+            color: #0654ba; 
+        }
+        .btn-outline:hover { 
+            background: #0654ba; 
+            color: white; 
+        }
+        
+        /* Form actions */
+        .form-actions { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding-top: 24px; 
+            border-top: 1px solid #e5e5e5; 
+            margin-top: 32px; 
+        }
+        .actions-left, .actions-right { 
+            display: flex; 
+            gap: 12px; 
+        }
+        
+        /* Status messages */
+        .status-message { 
+            padding: 12px 16px; 
+            margin-bottom: 20px; 
+            border-radius: 4px; 
+            font-weight: 500; 
+        }
+        .status-success { 
+            background-color: #d4edda; 
+            border: 1px solid #c3e6cb; 
+            color: #155724; 
+        }
+        .status-error { 
+            background-color: #f8d7da; 
+            border: 1px solid #f5c6cb; 
+            color: #721c24; 
+        }
+        
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="/Stores">Stores</a> > 
+            <a href="@Url.Action("Details", new { id = Model.Id })">@Model.StoreName</a> > 
+            Edit Store
+        </div>
+
+        <!-- Status Messages -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="status-message status-success">
+                @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="status-message status-error">
+                @TempData["Error"]
+            </div>
+        }
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title-section">
+                <h1 class="page-title">Edit Store: @Model.StoreName</h1>
+                <p class="page-subtitle">Update your store information and customize your brand presence</p>
+            </div>
+            
+            <div class="header-actions">
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">
+                    <span class="btn-icon">👁️</span>
+                    View Store
+                </a>
+            </div>
+        </div>
+
+        <!-- Edit Form Container -->
+        <div class="edit-container">
+            <!-- Left Column: Form -->
+            <div class="edit-main-content">
+                <form asp-action="Edit" method="post" enctype="multipart/form-data" class="store-edit-form">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="SellerId" />
+
+                    <!-- Basic Information Section -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3 class="section-title">Basic Information</h3>
+                            <p class="section-description">Essential details about your store that customers will see</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="StoreName" class="form-label required">Store Name</label>
+                            <input asp-for="StoreName" class="form-control" placeholder="Enter your store name" maxlength="100" required />
+                            <span asp-validation-for="StoreName" class="validation-error"></span>
+                            <div class="input-hint">
+                                Choose a memorable name that represents your brand. This will be displayed prominently on your store page.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Description" class="form-label">Store Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="6" placeholder="Describe your store, what you sell, and what makes you unique..." maxlength="1000"></textarea>
+                            <span asp-validation-for="Description" class="validation-error"></span>
+                            <div class="input-hint">
+                                Tell customers about your store. Include what you sell, your expertise, and what makes your store special. (Max 1000 characters)
+                            </div>
+                            <div class="character-count">
+                                <span id="descriptionCount">@(Model.Description?.Length ?? 0)</span>/1000 characters
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Banner Section -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3 class="section-title">Store Banner</h3>
+                            <p class="section-description">Upload a banner image or enter an image URL to customize your store's appearance</p>
+                        </div>
+
+                        <div class="banner-upload-container">
+                            <!-- Current Banner Display -->
+                            @if (!string.IsNullOrEmpty(Model.BannerImageUrl))
+                            {
+                                <div class="current-banner">
+                                    <label class="form-label">Current Banner</label>
+                                    <div class="current-banner-preview">
+                                        <img src="@Model.BannerImageUrl" alt="Current store banner" class="current-banner-image" />
+                                        <div class="banner-overlay">
+                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeBanner()">
+                                                <span class="btn-icon">🗑️</span>
+                                                Remove Banner
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Banner Input Options -->
+                            <div class="banner-input-options">
+                                <div class="input-option-tabs">
+                                    <button type="button" class="option-tab active" onclick="switchBannerOption('upload')">
+                                        📁 Upload File
+                                    </button>
+                                    <button type="button" class="option-tab" onclick="switchBannerOption('url')">
+                                        🔗 Image URL
+                                    </button>
+                                </div>
+
+                                <!-- File Upload Option -->
+                                <div id="uploadOption" class="banner-option active">
+                                    <div class="form-group">
+                                        <label for="bannerUpload" class="form-label">Upload Banner Image</label>
+                                        <div class="banner-upload-area" onclick="document.getElementById('bannerUpload').click()">
+                                            <div class="upload-content">
+                                                <div class="upload-icon">📸</div>
+                                                <div class="upload-text">
+                                                    <p class="upload-primary">Click to upload a banner image</p>
+                                                    <p class="upload-secondary">PNG, JPG, GIF, WebP up to 2MB. Recommended: 1200x300px</p>
+                                                </div>
+                                            </div>
+                                            <div class="banner-preview" id="bannerPreview" style="display: none;">
+                                                <img id="previewImage" src="" alt="Banner preview" />
+                                                <div class="preview-overlay">
+                                                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearBannerPreview()">
+                                                        Change Image
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <input type="file" id="bannerUpload" name="bannerFile" accept="image/*" style="display: none;" onchange="previewBanner(this)" />
+                                    </div>
+                                </div>
+
+                                <!-- URL Input Option -->
+                                <div id="urlOption" class="banner-option">
+                                    <div class="form-group">
+                                        <label for="bannerUrl" class="form-label">Banner Image URL</label>
+                                        <input type="url" id="bannerUrl" asp-for="BannerImageUrl" class="form-control" 
+                                               placeholder="https://example.com/banner-image.jpg" 
+                                               onchange="previewBannerUrl(this.value)" />
+                                        <div class="input-hint">
+                                            Enter the direct URL to an image. The image should be publicly accessible and preferably hosted on a reliable service.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="url-preview" id="urlPreview" style="display: none;">
+                                        <label class="form-label">URL Preview</label>
+                                        <div class="url-preview-container">
+                                            <img id="urlPreviewImage" src="" alt="URL preview" class="url-preview-image" />
+                                            <div class="url-preview-overlay">
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="clearUrlPreview()">
+                                                    Clear Preview
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <div class="actions-left">
+                            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">
+                                <span class="btn-icon">❌</span>
+                                Cancel
+                            </a>
+                        </div>
+                        <div class="actions-right">
+                            <button type="button" class="btn btn-outline" onclick="resetForm()">
+                                <span class="btn-icon">🔄</span>
+                                Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-icon">💾</span>
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 eBay Clone. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Real-time preview updates
+        document.addEventListener('DOMContentLoaded', function() {
+            // Store name preview
+            const storeNameInput = document.querySelector('input[name="StoreName"]');
+            const previewStoreName = document.getElementById('previewStoreName');
+            
+            storeNameInput.addEventListener('input', function() {
+                previewStoreName.textContent = this.value || 'Store Name';
+            });
+
+            // Description preview and character count
+            const descriptionInput = document.querySelector('textarea[name="Description"]');
+            const previewDescription = document.getElementById('previewDescription');
+            const characterCount = document.getElementById('descriptionCount');
+            
+            descriptionInput.addEventListener('input', function() {
+                const text = this.value;
+                characterCount.textContent = text.length;
+                
+                if (text.trim()) {
+                    previewDescription.textContent = text;
+                    previewDescription.classList.remove('preview-placeholder');
+                } else {
+                    previewDescription.innerHTML = '<span class="preview-placeholder">No description provided</span>';
+                }
+            });
+        });
+
+        // Banner upload and preview
+        function previewBanner(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Validate file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File size must be less than 2MB');
+                    input.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Update main preview
+                    const bannerPreview = document.getElementById('bannerPreview');
+                    const previewImage = document.getElementById('previewImage');
+                    const uploadArea = bannerPreview.previousElementSibling;
+                    
+                    previewImage.src = e.target.result;
+                    bannerPreview.style.display = 'block';
+                    uploadArea.style.display = 'none';
+                    
+                    // Update sidebar preview
+                    const previewBannerDisplay = document.getElementById('previewBannerDisplay');
+                    previewBannerDisplay.innerHTML = `<img src="${e.target.result}" alt="Store banner preview" class="preview-banner-img" />`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearBannerPreview() {
+            document.getElementById('bannerUpload').click();
+        }
+
+        function removeBanner() {
+            if (confirm('Are you sure you want to remove the current banner?')) {
+                document.getElementById('bannerImageUrl').value = '';
+                document.querySelector('.current-banner').style.display = 'none';
+                
+                // Reset sidebar preview
+                const previewBannerDisplay = document.getElementById('previewBannerDisplay');
+                previewBannerDisplay.innerHTML = '<div class="preview-banner-placeholder"><span class="preview-icon">🏪</span></div>';
+            }
+        }
+
+        function resetForm() {
+            if (confirm('Are you sure you want to reset all changes?')) {
+                location.reload();
+            }
+        }
+
+        // Form validation
+        document.querySelector('.store-edit-form').addEventListener('submit', function(e) {
+            const storeName = document.querySelector('input[name="StoreName"]').value.trim();
+            
+            if (!storeName) {
+                e.preventDefault();
+                alert('Store name is required');
+                return;
+            }
+            
+            if (storeName.length > 100) {
+                e.preventDefault();
+                alert('Store name must be 100 characters or less');
+                return;
+            }
+        });
+
+        // Switch between banner upload options
+        function switchBannerOption(option) {
+            const uploadOption = document.getElementById('uploadOption');
+            const urlOption = document.getElementById('urlOption');
+            const optionTabs = document.querySelectorAll('.option-tab');
+            
+            if (option === 'upload') {
+                uploadOption.classList.add('active');
+                urlOption.classList.remove('active');
+                
+                optionTabs[0].classList.add('active');
+                optionTabs[1].classList.remove('active');
+            } else {
+                uploadOption.classList.remove('active');
+                urlOption.classList.add('active');
+                
+                optionTabs[0].classList.remove('active');
+                optionTabs[1].classList.add('active');
+            }
+        }
+
+        // Preview banner image from URL input
+        function previewBannerUrl(url) {
+            const urlPreview = document.getElementById('urlPreview');
+            const urlPreviewImage = document.getElementById('urlPreviewImage');
+            
+            if (url) {
+                urlPreviewImage.src = url;
+                urlPreview.style.display = 'block';
+            } else {
+                urlPreview.style.display = 'none';
+            }
+        }
+
+        // Clear URL preview
+        function clearUrlPreview() {
+            document.getElementById('bannerUrl').value = '';
+            document.getElementById('urlPreview').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
