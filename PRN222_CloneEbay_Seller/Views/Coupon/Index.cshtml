@@ -3,6 +3,85 @@
     ViewData["Title"] = "Promotions Management";
 }
 
+<!-- ======================= SELLER HUB HEADER (BẮT ĐẦU) ======================= -->
+<div class="seller-hub-header">
+    <div class="seller-hub-title">
+        <h1>Seller Hub</h1>
+        <span class="seller-id">(2,431)</span>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+        <a href="/Seller/Overview" class="tab">Overview</a>
+
+        <!-- Tab Orders (không active) -->
+        <div class="tab-wrapper">
+            <a href="/Orders" class="tab has-dropdown">Orders</a>
+            <div class="dropdown-menu">
+                <a href="/Orders?status=all" class="dropdown-item">All orders</a>
+                <a href="/Orders?status=awaiting-payment" class="dropdown-item">Awaiting payment</a>
+                <a href="/Orders?status=awaiting-shipment" class="dropdown-item">Awaiting shipment</a>
+                <a href="/Orders?status=shipped" class="dropdown-item">Paid and shipped</a>
+                <a href="/Orders?status=cancelled" class="dropdown-item">Cancellations</a>
+                <a href="/Orders/Returns" class="dropdown-item">Returns</a>
+            </div>
+        </div>
+
+        <!-- Tab Listings -->
+        <div class="tab-wrapper">
+            <a href="#" class="tab has-dropdown">Listings</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Create listing</a>
+                <a href="#" class="dropdown-item">Active</a>
+            </div>
+        </div>
+
+        <!-- Tab Marketing -->
+        <div class="tab-wrapper">
+            <a href="#" class="tab has-dropdown">Marketing</a>
+            <div class="dropdown-menu">
+                <a href="/Coupon" class="dropdown-item">Promotions</a>
+            </div>
+        </div>
+
+        <!-- Tab Store -->
+        <a href="/Stores" class="tab">Store</a>
+
+        <!-- Tab Performance -->
+        <div class="tab-wrapper">
+            <a href="/Performance" class="tab has-dropdown">Performance</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Summary</a>
+                <a href="#" class="dropdown-item">Sales</a>
+            </div>
+        </div>
+
+        <!-- ✅✅✅ Tab Payments có dropdown - ĐÃ THÊM CLASS 'active' ✅✅✅ -->
+        <div class="tab-wrapper">
+            <a href="/Payment" class="tab has-dropdown active">Payments</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Overview</a>
+                <a href="#" class="dropdown-item">Payouts</a>
+                <a href="/Payment" class="dropdown-item active">Transaction history</a>
+            </div>
+        </div>
+
+        <!-- Other tabs -->
+        <a href="#" class="tab">Research</a>
+        <div class="tab-wrapper">
+            <a href="#" class="tab has-dropdown">Reports</a>
+            <div class="dropdown-menu">
+                <a href="#" class="dropdown-item">Sales reports</a>
+            </div>
+        </div>
+
+        <div class="right-nav">
+            <a href="#">Messages (129)</a>
+        </div>
+    </div>
+</div>
+<!-- ======================== SELLER HUB HEADER (KẾT THÚC) ======================= -->
+
 <div class="container">
     <div class="page-header">
         <h2 class="page-title">@ViewData["Title"]</h2>
