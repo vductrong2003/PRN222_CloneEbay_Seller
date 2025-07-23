@@ -1,0 +1,97 @@
+﻿@model PRN222_CloneEbay_Seller.Models.Payment
+
+@{
+    ViewData["Title"] = $"Transaction #{Model.Id} Details";
+}
+
+<div class="container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="/Payment">Transaction History</a> > Transaction #@Model.Id Details
+    </div>
+
+    <!-- Header -->
+    <div class="order-details-header">
+        <div class="order-title">
+            <h1>Transaction #@Model.Id</h1>
+            <span class="status-badge status-@(Model.Status?.ToLower() ?? "unknown")">
+                @(Model.Status ?? "Unknown")
+            </span>
+        </div>
+        <div class="order-date">
+            Processed on @Model.PaidAt?.ToString("MMMM dd, yyyy 'at' h:mm tt")
+        </div>
+    </div>
+
+    <div class="order-details-grid">
+        <!-- Left Column -->
+        <div class="order-main-content">
+            <!-- Payment Details Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3 class="panel-title">Transaction Details</h3>
+                </div>
+                <div class="payment-details" style="padding: 20px;">
+                    <div class="payment-row">
+                        <span class="payment-label">Amount:</span>
+                        <span class="payment-value" style="font-size: 1.5rem; font-weight: bold;">
+                            @if (Model.Status?.ToLower() == "completed")
+                            {
+                                <span style="color: #198754;">+ @Model.Amount?.ToString("C")</span>
+                            }
+                            else if (Model.Status?.ToLower() == "refunded")
+                            {
+                                <span style="color: #dc3545;">- @Model.Amount?.ToString("C")</span>
+                            }
+                            else
+                            {
+                                <span>@Model.Amount?.ToString("C")</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="payment-row">
+                        <span class="payment-label">Method:</span>
+                        <span class="payment-value">@(Model.Method ?? "Not specified")</span>
+                    </div>
+                    <div class="payment-row">
+                        <span class="payment-label">Transaction Status:</span>
+                        <span class="payment-value">@Model.Status</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="order-sidebar">
+            <!-- Related Order Panel -->
+            <div class="panel">
+                <div class="panel-header"><h3 class="panel-title">Related Order</h3></div>
+                <div class="customer-details" style="padding: 20px;">
+                    <div class="customer-row">
+                        <span class="customer-label">Order ID:</span>
+                        <span class="customer-value"><a asp-controller="Order" asp-action="Details" asp-route-id="@Model.OrderId">#@Model.OrderId</a></span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">Order Date:</span>
+                        <span class="customer-value">@Model.Order.OrderDate?.ToString("MMM dd, yyyy")</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Information Panel -->
+            <div class="panel">
+                <div class="panel-header"><h3 class="panel-title">Customer Information</h3></div>
+                <div class="customer-details" style="padding: 20px;">
+                    <div class="customer-row">
+                        <span class="customer-label">Name:</span>
+                        <span class="customer-value">@(Model.Order.Buyer?.Username ?? "Unknown")</span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">Email:</span>
+                        <span class="customer-value">@(Model.Order.Buyer?.Email ?? "Not provided")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

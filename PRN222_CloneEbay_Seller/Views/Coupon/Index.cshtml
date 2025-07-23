@@ -1,0 +1,45 @@
+﻿@model List<PRN222_CloneEbay_Seller.Models.Coupon>
+@{
+    ViewData["Title"] = "Promotions Management";
+}
+
+<div class="container">
+    <div class="page-header">
+        <h2 class="page-title">@ViewData["Title"]</h2>
+        <a asp-action="Create" class="btn btn-primary">Create New Coupon</a>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h3 class="panel-title">Coupon List</h3></div>
+        <div class="orders-table">
+            <div class="orders-table-header">
+                <div>Code</div>
+                <div>Discount</div>
+                <div>Applied to Product</div>
+                <div>Effective Dates</div>
+                <div>Status</div>
+                <div>Actions</div>
+            </div>
+            @foreach (var coupon in Model)
+            {
+                <div class="order-row">
+                    <div><strong>@coupon.Code</strong></div>
+                    <div>@coupon.DiscountPercent?.ToString("0.##")%</div>
+                    <div>@(coupon.Product?.Title ?? "N/A")</div>
+                    <div>@coupon.StartDate?.ToString("d") - @coupon.EndDate?.ToString("d")</div>
+                    <div>
+                        @{
+                            var status = (DateTime.Now >= coupon.StartDate && DateTime.Now <= coupon.EndDate) ? "Active" : "Inactive";
+                            var statusClass = status == "Active" ? "status-delivered" : "status-cancelled";
+                        }
+                        <span class="status-badge @statusClass">@status</span>
+                    </div>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@coupon.Id" class="action-btn">Edit</a>
+                        <!-- Thêm nút Delete nếu cần -->
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

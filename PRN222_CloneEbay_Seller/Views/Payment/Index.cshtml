@@ -1,0 +1,196 @@
+﻿@model List<PRN222_CloneEbay_Seller.Models.PaymentTransactionViewModel>
+
+@{
+    ViewData["Title"] = "Transaction History";
+    var totalSales = ViewBag.TotalSales ?? 0m;
+    var totalRefunds = ViewBag.TotalRefunds ?? 0m;
+    var netIncome = ViewBag.NetIncome ?? 0m;
+    var totalTransactions = ViewBag.TotalTransactions ?? 0;
+}
+
+<div class="container">
+    <!-- ======================= SELLER HUB HEADER (BẮT ĐẦU) ======================= -->
+    <div class="seller-hub-header">
+        <div class="seller-hub-title">
+            <h1>Seller Hub</h1>
+            <span class="seller-id">(2,431)</span>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-container">
+            <a href="/Seller/Overview" class="tab">Overview</a>
+
+            <!-- Tab Orders (không active) -->
+            <div class="tab-wrapper">
+                <a href="/Orders" class="tab has-dropdown">Orders</a>
+                <div class="dropdown-menu">
+                    <a href="/Orders?status=all" class="dropdown-item">All orders</a>
+                    <a href="/Orders?status=awaiting-payment" class="dropdown-item">Awaiting payment</a>
+                    <a href="/Orders?status=awaiting-shipment" class="dropdown-item">Awaiting shipment</a>
+                    <a href="/Orders?status=shipped" class="dropdown-item">Paid and shipped</a>
+                    <a href="/Orders?status=cancelled" class="dropdown-item">Cancellations</a>
+                    <a href="/Orders/Returns" class="dropdown-item">Returns</a>
+                </div>
+            </div>
+
+            <!-- Tab Listings -->
+            <div class="tab-wrapper">
+                <a href="#" class="tab has-dropdown">Listings</a>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item">Create listing</a>
+                    <a href="#" class="dropdown-item">Active</a>
+                </div>
+            </div>
+
+            <!-- Tab Marketing -->
+            <div class="tab-wrapper">
+                <a href="#" class="tab has-dropdown">Marketing</a>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item">Promotions</a>
+                </div>
+            </div>
+
+            <!-- Tab Store -->
+            <a href="/Stores" class="tab">Store</a>
+
+            <!-- Tab Performance -->
+            <div class="tab-wrapper">
+                <a href="/Performance" class="tab has-dropdown">Performance</a>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item">Summary</a>
+                    <a href="#" class="dropdown-item">Sales</a>
+                </div>
+            </div>
+
+            <!-- ✅✅✅ Tab Payments có dropdown - ĐÃ THÊM CLASS 'active' ✅✅✅ -->
+            <div class="tab-wrapper">
+                <a href="/Payment" class="tab has-dropdown active">Payments</a>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item">Overview</a>
+                    <a href="#" class="dropdown-item">Payouts</a>
+                    <a asp-controller="Payment" asp-action="Index" class="dropdown-item">Transaction history</a>
+                </div>
+            </div>
+
+            <!-- Other tabs -->
+            <a href="#" class="tab">Research</a>
+            <div class="tab-wrapper">
+                <a href="#" class="tab has-dropdown">Reports</a>
+                <div class="dropdown-menu">
+                    <a href="#" class="dropdown-item">Sales reports</a>
+                </div>
+            </div>
+
+            <div class="right-nav">
+                <a href="#">Messages (129)</a>
+            </div>
+        </div>
+    </div>
+    <!-- ======================== SELLER HUB HEADER (KẾT THÚC) ======================= -->
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-section">
+            <h2 class="page-title">@ViewData["Title"]</h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="cards-grid">
+        <div class="overview-card">
+            <div class="overview-card-title">Total Sales</div>
+            <div class="overview-card-value">@totalSales.ToString("C")</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-card-title">Total Refunds</div>
+            <div class="overview-card-value" style="color: #dc3545;">@totalRefunds.ToString("C")</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-card-title">Net Income</div>
+            <div class="overview-card-value">@netIncome.ToString("C")</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-card-title">Total Transactions</div>
+            <div class="overview-card-value">@totalTransactions</div>
+        </div>
+    </div>
+
+    <!-- Transactions Table Panel -->
+    <div class="panel">
+        <div class="panel-header">
+            <h3 class="panel-title">Transaction List</h3>
+            <div class="panel-stats">
+                <span class="panel-stats-number">@Model.Count</span>
+                transactions
+            </div>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="orders-table">
+                <div class="orders-table-header">
+                    <div class="order-col-date">Date</div>
+                    <div class="order-col-id">Type</div>
+                    <div class="order-col-buyer">Details</div>
+                    <div class="order-col-total">Amount</div>
+                    <div class="order-col-actions">Actions</div>
+                </div>
+
+                @foreach (var transaction in Model)
+                {
+                    <div class="order-row">
+                        <div class="order-col-date">
+                            @transaction.TransactionDate?.ToString("MMM dd, yyyy HH:mm")
+                        </div>
+                        <div class="order-col-id">
+                            @if (transaction.Status?.ToLower() == "completed")
+                            {
+                                <span class="status-badge status-delivered">Sale</span>
+                            }
+                            else if (transaction.Status?.ToLower() == "refunded")
+                            {
+                                <span class="status-badge status-cancelled">Refund</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-unknown">@transaction.Status</span>
+                            }
+                        </div>
+                        <div class="order-col-buyer">
+                            <div class="buyer-info">
+                                <div class="buyer-name">Order <a asp-controller="Order" asp-action="Details" asp-route-id="@transaction.OrderId">#@transaction.OrderId</a></div>
+                                <div class="buyer-email">Buyer: @transaction.BuyerName</div>
+                            </div>
+                        </div>
+                        <div class="order-col-total">
+                            @if (transaction.Status?.ToLower() == "completed")
+                            {
+                                <strong style="color: #198754;">+ @transaction.Amount?.ToString("C")</strong>
+                            }
+                            else if (transaction.Status?.ToLower() == "refunded")
+                            {
+                                <strong style="color: #dc3545;">- @transaction.Amount?.ToString("C")</strong>
+                            }
+                            else
+                            {
+                                <strong>@transaction.Amount?.ToString("C")</strong>
+                            }
+                        </div>
+                        <div class="order-col-actions">
+                            <div class="action-buttons">
+                                <a asp-action="Details" asp-route-id="@transaction.PaymentId" class="action-btn">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">💸</div>
+                <div class="empty-title">No transactions found</div>
+                <div class="empty-message">You don't have any payment transactions yet.</div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,55 @@
+﻿@model PRN222_CloneEbay_Seller.Models.Coupon
+@{
+    ViewData["Title"] = "Create New Coupon";
+}
+
+<div class="container">
+    <div class="order-details-header">
+        <h1>@ViewData["Title"]</h1>
+    </div>
+
+    <form asp-action="Create" class="panel" style="padding: 2rem;">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="Code" class="form-label"></label>
+                    <input asp-for="Code" class="form-control" />
+                    <span asp-validation-for="Code" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="DiscountPercent" class="form-label">Discount (%)</label>
+                    <input asp-for="DiscountPercent" class="form-control" type="number" step="0.01" />
+                    <span asp-validation-for="DiscountPercent" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="MaxUsage" class="form-label">Maximum Usage</label>
+                    <input asp-for="MaxUsage" class="form-control" type="number" />
+                    <span asp-validation-for="MaxUsage" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="ProductId" class="form-label">Apply to Product</label>
+                    <select asp-for="ProductId" class="form-control" asp-items="ViewBag.Products">
+                        <option value="">-- Select a Product --</option>
+                    </select>
+                    <span asp-validation-for="ProductId" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="StartDate" class="form-label"></label>
+                    <input asp-for="StartDate" class="form-control" type="date" />
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="EndDate" class="form-label"></label>
+                    <input asp-for="EndDate" class="form-control" type="date" />
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+        <div class="form-group mt-4">
+            <input type="submit" value="Create Coupon" class="btn btn-primary" />
+            <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+        </div>
+    </form>
+</div>
