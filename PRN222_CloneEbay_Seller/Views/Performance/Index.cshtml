@@ -2,9 +2,9 @@
 @{
     ViewData["Title"] = "Performance Overview";
     var overview = ViewBag.Overview as Dictionary<string, object> ?? new Dictionary<string, object>();
-    var revenueData = ViewBag.RevenueData as Dictionary<string, object> ?? new Dictionary<string, object>();
+    var revenueChartData = ViewBag.RevenueChartData as Dictionary<string, object> ?? new Dictionary<string, object>();
+    var orderStats = ViewBag.OrderStats as Dictionary<string, int> ?? new Dictionary<string, int>();
     int selectedDays = ViewBag.SelectedDays ?? 30;
-    int selectedCount = ViewBag.SelectedCount ?? 15;
 }
 
 <!DOCTYPE html>
@@ -29,7 +29,6 @@
             <div class="tabs-container">
                 <a href="/Seller/Overview" class="tab">Overview</a>
 
-                <!-- Tab Orders có dropdown -->
                 <div class="tab-wrapper">
                     <a href="/Orders" class="tab has-dropdown">Orders</a>
                     <div class="dropdown-menu">
@@ -38,22 +37,16 @@
                         <a href="/Orders?status=awaiting-shipment" class="dropdown-item">Awaiting shipment</a>
                         <a href="/Orders?status=shipped" class="dropdown-item">Paid and shipped</a>
                         <a href="/Orders?status=cancelled" class="dropdown-item">Cancellations</a>
-                        <a href="/Orders/Returns" class="dropdown-item">Returns</a>
-                        <a href="/Orders/Disputes" class="dropdown-item">Requests and disputes</a>
-                        <a href="/Orders/ShippingLabels" class="dropdown-item">Shipping labels</a>
                     </div>
                 </div>
 
-                <!-- Other tabs -->
                 <div class="tab-wrapper">
-                    <a href="#" class="tab has-dropdown">Listings</a>
+                    <a href="/Listing" class="tab has-dropdown">Listings</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Create listing</a>
                         <a href="#" class="dropdown-item">Active</a>
                         <a href="#" class="dropdown-item">Unsold</a>
                         <a href="#" class="dropdown-item">Drafts</a>
-                        <a href="#" class="dropdown-item">Scheduled</a>
-                        <a href="#" class="dropdown-item">Ended</a>
                     </div>
                 </div>
 
@@ -62,45 +55,33 @@
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Promotions</a>
                         <a href="#" class="dropdown-item">Advertising</a>
-                        <a href="#" class="dropdown-item">Email marketing</a>
                     </div>
                 </div>
 
-                <!-- Tab thông thường -->
                 <a href="/Stores" class="tab">Store</a>
 
-                <!-- Tab Performance có dropdown - Active -->
                 <div class="tab-wrapper">
                     <a href="/Performance" class="tab has-dropdown active">Performance</a>
                     <div class="dropdown-menu">
                         <a href="/Performance" class="dropdown-item active">Overview</a>
-                        <a href="/Performance/Dashboard" class="dropdown-item">Dashboard</a>
-                        <a href="/Performance/Sales" class="dropdown-item">Sales</a>
-                        <a href="/Performance/Analytics" class="dropdown-item">Analytics</a>
-                        <a href="/Performance/Products" class="dropdown-item">Products</a>
                     </div>
                 </div>
 
-                <!-- Tab Payments có dropdown -->
                 <div class="tab-wrapper">
                     <a href="#" class="tab has-dropdown">Payments</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Overview</a>
                         <a href="#" class="dropdown-item">Payouts</a>
-                        <a href="#" class="dropdown-item">Transaction history</a>
                     </div>
                 </div>
 
-                <!-- Tab thông thường khác -->
                 <a href="#" class="tab">Research</a>
 
-                <!-- Tab Reports có dropdown -->
                 <div class="tab-wrapper">
                     <a href="#" class="tab has-dropdown">Reports</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Sales reports</a>
                         <a href="#" class="dropdown-item">Traffic reports</a>
-                        <a href="#" class="dropdown-item">Performance reports</a>
                     </div>
                 </div>
 
@@ -112,91 +93,76 @@
             </div>
         </div>
 
-        <!-- Page Header với Time Filter và Count Filter -->
+        <!-- Page Header with Time Filter -->
         <div class="page-header">
             <div class="page-title-section">
                 <h2 class="page-title">Performance Overview</h2>
                 <div class="filter-controls">
-                    <!-- Quick Time Filter -->
-                    <!-- Quick Time Filter -->
                     <div class="filter-group">
                         <label for="timeFilter" class="filter-label">Time period:</label>
                         <select id="timeFilter" class="filter-dropdown" onchange="filterByTime(this.value)">
-                            <option value="7" selected="@(selectedDays == 7 ? "selected" : null)">Last 7 Days</option>
-                            <option value="30" selected="@(selectedDays == 30 ? "selected" : null)">Last 30 Days</option>
-                            <option value="90" selected="@(selectedDays == 90 ? "selected" : null)">Last 90 Days</option>
-                            <option value="365" selected="@(selectedDays == 365 ? "selected" : null)">Last Year</option>
-                            <option value="custom">Custom Range</option>
+                            @if (selectedDays == 7)
+                            {
+                                <option value="7" selected>Last 7 Days</option>
+                            }
+                            else
+                            {
+                                <option value="7">Last 7 Days</option>
+                            }
+                            
+                            @if (selectedDays == 30)
+                            {
+                                <option value="30" selected>Last 30 Days</option>
+                            }
+                            else
+                            {
+                                <option value="30">Last 30 Days</option>
+                            }
+                            
+                            @if (selectedDays == 90)
+                            {
+                                <option value="90" selected>Last 90 Days</option>
+                            }
+                            else
+                            {
+                                <option value="90">Last 90 Days</option>
+                            }
+                            
+                            @if (selectedDays == 365)
+                            {
+                                <option value="365" selected>Last Year</option>
+                            }
+                            else
+                            {
+                                <option value="365">Last Year</option>
+                            }
                         </select>
                     </div>
-
-                    <!-- Show Count Filter -->
-                    <div class="filter-group">
-                        <label for="countFilter" class="filter-label">Show:</label>
-                        <select id="countFilter" class="filter-dropdown" onchange="filterByCount(this.value)">
-                            <option value="10" selected="@(selectedCount == 10 ? "selected" : null)">10 orders</option>
-                            <option value="15" selected="@(selectedCount == 15 ? "selected" : null)">15 orders</option>
-                            <option value="20" selected="@(selectedCount == 20 ? "selected" : null)">20 orders</option>
-                            <option value="50" selected="@(selectedCount == 50 ? "selected" : null)">50 orders</option>
-                        </select>
-                    </div>
-
                 </div>
-            </div>
-            
-            <!-- Custom Date Range Filter (hidden by default) -->
-            <div class="search-form" id="customDateRange" style="display: none;">
-                <form action="/Performance/Search" method="get" class="search-controls">
-                    <div class="date-range-inputs">
-                        @{
-                            string fromDateValue = ViewBag.FromDate?.ToString("yyyy-MM-dd") ?? "";
-                            string toDateValue = ViewBag.ToDate?.ToString("yyyy-MM-dd") ?? "";
-                        }
-                        <input type="date" name="fromDate" id="fromDate" value="@fromDateValue" class="date-input" title="From Date">
-                        <span class="date-separator">to</span>
-                        <input type="date" name="toDate" id="toDate" value="@toDateValue" class="date-input" title="To Date">
-                        <input type="hidden" name="count" value="@selectedCount">
-                        <button type="submit" class="search-btn">Apply Date Range</button>
-                        <button type="button" class="cancel-btn" onclick="cancelCustomRange()">Cancel</button>
-                    </div>
-                </form>
             </div>
         </div>
 
-        <!-- Performance Overview Cards -->
+        <!-- Performance Overview Cards (đồng bộ với Order) -->
         <div class="cards-grid">
             <div class="overview-card">
-                <div class="overview-card-title">Total Revenue</div>
+                <div class="overview-card-title">Total Revenue (Delivered)</div>
                 <div class="overview-card-value">$@(Convert.ToDecimal(overview.GetValueOrDefault("TotalRevenue", 0m)).ToString("N2"))</div>
                 @{
                     var revenueGrowth = Convert.ToDecimal(overview.GetValueOrDefault("RevenueGrowth", 0));
-                    string growthIcon;
-                    string growthClass;
-                    
-                    if (revenueGrowth >= 0)
-                    {
-                        growthIcon = "+";
-                        growthClass = "positive";
-                    }
-                    else
-                    {
-                        growthIcon = "-";
-                        growthClass = "negative";
-                    }
                 }
-                <div class="overview-card-change @growthClass">
-                    @growthIcon@Math.Abs(revenueGrowth).ToString("N1")% vs previous period
+                <div class="overview-card-change @(revenueGrowth >= 0 ? "positive" : "negative")">
+                    @(revenueGrowth >= 0 ? "+" : "")@revenueGrowth.ToString("N1")% vs previous period
                 </div>
             </div>
             <div class="overview-card">
                 <div class="overview-card-title">Total Orders</div>
                 <div class="overview-card-value">@overview.GetValueOrDefault("TotalOrders", 0)</div>
-                <div class="overview-card-change">Orders processed</div>
+                <div class="overview-card-change">All orders in period</div>
             </div>
             <div class="overview-card">
-                <div class="overview-card-title">Products Sold</div>
-                <div class="overview-card-value">@overview.GetValueOrDefault("TotalProductsSold", 0)</div>
-                <div class="overview-card-change">Units sold</div>
+                <div class="overview-card-title">Susccesfully Deli</div>
+                <div class="overview-card-value">@orderStats.GetValueOrDefault("Delivered", 0)</div>
+                <div class="overview-card-change">Pending orders</div>
             </div>
             <div class="overview-card">
                 <div class="overview-card-title">Average Order Value</div>
@@ -205,14 +171,15 @@
             </div>
         </div>
 
-        <!-- Charts Section -->
+        
+
+        <!-- Revenue Chart -->
         <div class="performance-charts">
             <div class="chart-container">
                 <div class="chart-header">
-                    <h3>Revenue Trends</h3>
+                    <h3>Revenue Trends (Delivered Orders Only)</h3>
                     <div class="chart-stats">
-                        <span class="chart-total">Total: $@(Convert.ToDecimal(revenueData.GetValueOrDefault("TotalRevenue", 0m)).ToString("N2"))</span>
-                        <span class="chart-average">Avg Daily: $@(Convert.ToDecimal(revenueData.GetValueOrDefault("AverageDaily", 0m)).ToString("N2"))</span>
+                        <span class="chart-total">Total: $@(Convert.ToDecimal(revenueChartData.GetValueOrDefault("TotalRevenue", 0m)).ToString("N2"))</span>
                     </div>
                 </div>
                 <div class="chart-content">
@@ -221,25 +188,13 @@
             </div>
         </div>
 
-        <!-- Recent Sales Table với dynamic title -->
+        <!-- Recent Sales Table -->
         <div class="panel">
             <div class="panel-header">
-                <h3 class="panel-title">
-                    Recent Sales 
-                    @if (ViewBag.FromDate != null && ViewBag.ToDate != null)
-                    {
-                        <span class="date-range-info">
-                            (@ViewBag.FromDate?.ToString("MMM dd") - @ViewBag.ToDate?.ToString("MMM dd, yyyy"))
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="date-range-info">(Last @selectedDays days)</span>
-                    }
-                </h3>
+                <h3 class="panel-title">Recent Sales (Last @selectedDays days)</h3>
                 <div class="panel-stats">
                     <span class="panel-stats-number">@Model.Count</span>
-                    of @selectedCount orders
+                    orders
                 </div>
             </div>
 
@@ -276,12 +231,12 @@
                                         {
                                             <div class="order-item">
                                                 <span class="item-name">@(item.Product?.Title ?? "Unknown Product")</span>
-                                                <span class="item-qty">@item.Quantity</span>
+                                                <span class="item-qty">×@item.Quantity</span>
                                             </div>
                                         }
                                         @if (order.OrderItems.Count > 2)
                                         {
-                                            <div class="more-items">+@(order.OrderItems.Count - 2) more items</div>
+                                            <div class="more-items">+@(order.OrderItems.Count - 2) more</div>
                                         }
                                     </div>
                                 }
@@ -312,105 +267,23 @@
                     <div class="empty-icon">📊</div>
                     <div class="empty-title">No sales data found</div>
                     <div class="empty-message">
-                        @if (ViewBag.FromDate != null && ViewBag.ToDate != null)
-                        {
-                            <text>You don't have any sales between @ViewBag.FromDate?.ToString("MMM dd") and @ViewBag.ToDate?.ToString("MMM dd, yyyy"). Try selecting a different date range.</text>
-                        }
-                        else
-                        {
-                            <text>You don't have any sales in the last @selectedDays days. Start selling to see your performance data here!</text>
-                        }
+                        You don't have any sales in the last @selectedDays days. Start selling to see your performance data here!
                     </div>
                 </div>
             }
         </div>
-
-        <!-- Performance Metrics Grid -->
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-title">Active Products</div>
-                <div class="metric-value">@overview.GetValueOrDefault("ActiveProducts", 0)</div>
-                <div class="metric-description">Products available for sale</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Conversion Rate</div>
-                <div class="metric-value">@((overview.GetValueOrDefault("ConversionRate", 0m)))%</div>
-                <div class="metric-description">Visitors who made a purchase</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-title">Time Period</div>
-                <div class="metric-value">@selectedDays</div>
-                <div class="metric-description">Days analyzed</div>
-            </div>
-        </div>
     </div>
 
-    <footer>
-        <p>&copy; 2024 eBay Clone. All rights reserved.</p>
-    </footer>
-
     <script>
-        // Filter by time period
         function filterByTime(days) {
-            if (days === 'custom') {
-                showCustomDateRange();
-            } else {
-                hideCustomDateRange();
-                const url = new URL(window.location);
-                url.searchParams.set('days', days);
-                url.searchParams.set('count', @selectedCount);
-                url.searchParams.delete('fromDate');
-                url.searchParams.delete('toDate');
-                window.location.href = url;
-            }
-        }
-
-        // Filter by count
-        function filterByCount(count) {
             const url = new URL(window.location);
-            url.searchParams.set('count', count);
-            url.searchParams.set('days', @selectedDays);
+            url.searchParams.set('days', days);
             window.location.href = url;
         }
 
-        // Show custom date range
-        function showCustomDateRange() {
-            document.getElementById('customDateRange').style.display = 'block';
-            // Set default dates (last 30 days to today)
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            document.getElementById('toDate').value = today.toISOString().split('T')[0];
-            document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
-        }
-
-        // Hide custom date range
-        function hideCustomDateRange() {
-            document.getElementById('customDateRange').style.display = 'none';
-        }
-
-        // Cancel custom range
-        function cancelCustomRange() {
-            hideCustomDateRange();
-            document.getElementById('timeFilter').value = '@selectedDays';
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Show custom date range if we have custom dates
-            @if (ViewBag.FromDate != null && ViewBag.ToDate != null)
-            {
-                <text>
-                document.getElementById('timeFilter').value = 'custom';
-                showCustomDateRange();
-                </text>
-            }
-        });
-
-        // Revenue Chart với dynamic data
-        var revenueLabels = @Html.Raw(Json.Serialize(revenueData.GetValueOrDefault("Labels", new List<string>())));
-        var revenueDataPoints = @Html.Raw(Json.Serialize(revenueData.GetValueOrDefault("Data", new List<decimal>())));
+        // Revenue Chart
+        var revenueLabels = @Html.Raw(Json.Serialize(revenueChartData.GetValueOrDefault("Labels", new List<string>())));
+        var revenueDataPoints = @Html.Raw(Json.Serialize(revenueChartData.GetValueOrDefault("Data", new List<decimal>())));
 
         var ctx = document.getElementById('revenueChart')?.getContext('2d');
         if (ctx) {
@@ -421,13 +294,13 @@
                     datasets: [{
                         label: 'Daily Revenue',
                         data: revenueDataPoints,
-                        borderColor: '#4e73df',
-                        backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3,
-                        pointBackgroundColor: '#4e73df',
-                        pointBorderColor: '#4e73df',
+                        pointBackgroundColor: '#28a745',
+                        pointBorderColor: '#28a745',
                         pointRadius: 4,
                         pointHoverRadius: 6
                     }]
@@ -464,6 +337,8 @@
     </script>
 
     <style>
+        /* ...existing code... */
+        
         .filter-controls {
             display: flex;
             gap: 1rem;
@@ -488,46 +363,68 @@
             border-radius: 4px;
             font-size: 0.9rem;
         }
-        
-        .date-range-inputs {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
+
+        .status-card {
+            background: white;
             border-radius: 8px;
-            margin-top: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            border-left: 4px solid;
         }
-        
-        .date-separator {
-            color: #666;
+
+        .status-card.pending { border-left-color: #ffc107; }
+        .status-card.paid { border-left-color: #17a2b8; }
+        .status-card.shipped { border-left-color: #007bff; }
+        .status-card.delivered { border-left-color: #28a745; }
+
+        .status-card-title {
             font-size: 0.9rem;
-        }
-        
-        .cancel-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .cancel-btn:hover {
-            background: #5a6268;
-        }
-        
-        .date-range-info {
-            font-weight: normal;
             color: #666;
-            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .status-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .overview-card-change.positive {
+            color: #28a745;
         }
         
-        .panel-stats {
+        .overview-card-change.negative {
+            color: #dc3545;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+        
+        .chart-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.5rem;
-            color: #666;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .chart-content {
+            position: relative;
+            height: 300px;
+        }
+        
+        .chart-total {
+            color: #28a745;
+            font-weight: 600;
         }
     </style>
 </body>

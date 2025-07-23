@@ -1,0 +1,422 @@
+@{
+    ViewData["Title"] = "Start listing with item info";
+    var drafts = ViewBag.Drafts as List<PRN222_CloneEbay_Seller.Models.Product> ?? new List<PRN222_CloneEbay_Seller.Models.Product>();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css">
+    <style>
+        .create-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .ebay-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .ebay-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .main-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+
+        .create-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #007bff;
+            border: 2px solid #007bff;
+        }
+
+        .btn-outline:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .upload-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .upload-option {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .upload-option:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .option-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .option-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .option-description {
+            color: #6c757d;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .drafts-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .draft-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .draft-item:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+
+        .draft-info {
+            flex: 1;
+        }
+
+        .draft-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .draft-meta {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .draft-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .no-drafts {
+            text-align: center;
+            color: #6c757d;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        .back-button {
+            margin-bottom: 2rem;
+        }
+
+        .form-note {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #1565c0;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        
+    </style>
+</head>
+<body>
+    <div class="create-container">
+        <!-- Back Button -->
+        <div class="back-button">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <span>←</span>
+                Back to Listings
+            </a>
+        </div>
+
+        <!-- Header -->
+        <div class="ebay-header">
+            <div class="ebay-logo" style="width: 80px; height: 32px; background: linear-gradient(45deg, #e53e3e, #f6ad55, #38a169, #3182ce); border-radius: 4px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">eBay</div>
+            <h1 class="main-title">Start listing with item info</h1>
+            <p class="subtitle">Describe your item, and we'll start your listing based on items in our catalog.</p>
+        </div>
+
+        <!-- Create New Product Section -->
+        <div class="create-section">
+            <div class="section-header">
+                <h2 class="section-title">✨ Create New Product</h2>
+            </div>
+            <div class="section-content">
+                <form asp-action="CreateDraft" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="search-form">
+                        <input type="text" name="title" class="search-input" 
+                               placeholder="Enter brand, model, description, etc." 
+                               required maxlength="255" />
+                        <button type="submit" class="btn btn-primary">
+                            <span>🚀</span>
+                            Start Listing
+                        </button>
+                    </div>
+                </form>
+
+                <div class="form-note">
+                    💡 <strong>Tip:</strong> Enter a descriptive title for your product. You'll be able to add more details like price, description, and images in the next step.
+                </div>
+            </div>
+        </div>
+
+        <!-- More Ways to Start Listing -->
+        <div class="create-section">
+            <div class="section-header">
+                <h2 class="section-title">More ways to start listing</h2>
+            </div>
+            <div class="section-content">
+                <div class="upload-options">
+                    <a href="#" class="upload-option" onclick="alert('Photo upload feature coming soon!')">
+                        <span class="option-icon">📷</span>
+                        <div class="option-title">Photo upload</div>
+                        <div class="option-description">Add photos for multiple items to generate item details.</div>
+                    </a>
+                    
+                    <a href="#" class="upload-option" onclick="alert('File upload feature coming soon!')">
+                        <span class="option-icon">📄</span>
+                        <div class="option-title">File upload</div>
+                        <div class="option-description">Import a CSV or XLSX file with info about your inventory.</div>
+                    </a>
+                    
+                    <a href="#" class="upload-option" onclick="alert('Bulk listing feature coming soon!')">
+                        <span class="option-icon">📦</span>
+                        <div class="option-title">Bulk listing</div>
+                        <div class="option-description">Create thousands of similar listings with bulk actions.</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drafts Section -->
+        @if (drafts.Any())
+        {
+            <div class="create-section">
+                <div class="section-header">
+                    <h2 class="section-title">📝 Your Drafts</h2>
+                </div>
+                <div class="section-content">
+                    <p style="color: #6c757d; margin-bottom: 1.5rem;">Finish drafts you've already created.</p>
+                    
+                    <div class="drafts-list">
+                        @foreach (var draft in drafts.Take(10))
+                        {
+                            <div class="draft-item">
+                                <div class="draft-info">
+                                    <div class="draft-title">@draft.Title</div>
+                                    <div class="draft-meta">
+                                        Created: @(draft.Id) • Status: Draft
+                                        @if (!string.IsNullOrEmpty(draft.Images))
+                                        {
+                                            <span> • Has Images</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="draft-actions">
+                                    <a href="@Url.Action("Edit", new { id = draft.Id })" class="btn btn-primary btn-sm">
+                                        <span>✏️</span>
+                                        Continue
+                                    </a>
+                                    <form asp-action="Delete" method="post" style="display: inline;" 
+                                          onsubmit="return confirm('Are you sure you want to delete this draft?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@draft.Id" />
+                                        <button type="submit" class="btn btn-outline btn-sm">
+                                            <span>🗑️</span>
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (drafts.Count > 10)
+                    {
+                        <div style="text-align: center; margin-top: 1.5rem;">
+                            <a href="@Url.Action("Drafts")" class="btn btn-secondary">
+                                View All Drafts (@drafts.Count total)
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Templates Section (Future Feature) -->
+        <div class="create-section">
+            <div class="section-header">
+                <h2 class="section-title">📋 Templates</h2>
+            </div>
+            <div class="section-content">
+                <p style="color: #6c757d; margin-bottom: 1rem;">Use a template to start listing</p>
+                <div class="no-drafts">
+                    You currently do not have any listing templates. 
+                    <a href="#" style="color: #007bff;">Manage your listing templates</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const titleInput = document.querySelector('input[name="title"]');
+            const title = titleInput.value.trim();
+            
+            if (!title) {
+                e.preventDefault();
+                alert('Please enter a product title');
+                titleInput.focus();
+                return;
+            }
+
+            if (title.length < 3) {
+                e.preventDefault();
+                alert('Product title must be at least 3 characters long');
+                titleInput.focus();
+                return;
+            }
+        });
+
+        // Auto-focus on title input
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('input[name="title"]').focus();
+        });
+
+        // Enhanced enter key handling
+        document.querySelector('input[name="title"]').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.closest('form').submit();
+            }
+        });
+    </script>
+</body>
+</html>
