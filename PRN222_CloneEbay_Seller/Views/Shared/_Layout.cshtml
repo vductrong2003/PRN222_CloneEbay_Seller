@@ -11,10 +11,62 @@
     <header>
         <div class="container">
             <div class="d-flex justify-content-between top-header">
-                <div>
-                    <a href="#" class="greeting">Hi vductrong2003!</a>
+                <div class="left-nav">
+                    @{
+                        var userId = Context.Session.GetInt32("UserId");
+                        var userName = Context.Session.GetString("UserName");
+                        var userRole = Context.Session.GetString("UserRole");
+                        var userAvatar = Context.Session.GetString("UserAvatar");
+                    }
+                    
+                    @if (userId.HasValue)
+                    {
+                        <!-- User is logged in - Show avatar dropdown -->
+                        <div class="user-menu-dropdown">
+                            <div class="user-avatar-container" onclick="toggleUserMenu()">
+                                @if (!string.IsNullOrEmpty(userAvatar))
+                                {
+                                    <img src="@userAvatar" alt="@userName" class="user-avatar">
+                                }
+                                else
+                                {
+                                    <div class="user-avatar-placeholder">
+                                        @(userName?.Substring(0, 1).ToUpper() ?? "U")
+                                    </div>
+                                }
+                                <span class="user-name">Hi @userName!</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            
+                            <div id="userDropdownMenu" class="user-dropdown-menu" style="display: none;">
+                                <a href="/Account/Profile" class="dropdown-item">
+                                    <span class="dropdown-icon">👤</span>
+                                    My Profile
+                                </a>
+                                
+                                @if (userRole == "Seller")
+                                {
+                                    <a href="/Stores" class="dropdown-item">
+                                        <span class="dropdown-icon">🏪</span>
+                                        My Store
+                                    </a>
+                                }
+                                
+                                <div class="dropdown-divider"></div>
+                                <a href="/Account/Logout" class="dropdown-item logout-item">
+                                    <span class="dropdown-icon">🚪</span>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- User is not logged in - Show Sign In link -->
+                        <a href="/Account/Login" class="sign-in-link">Sign in</a>
+                    }
                 </div>
-                <div>
+                <div class="right-nav">
                     <a href="#">Daily Deals</a>
                     <a href="#">Help & Contact</a>
                 </div>
@@ -48,9 +100,174 @@
         <div>© 2025 eBay Inc. All rights reserved.</div>
         <div>Last updated: 2025-06-23 05:11:33</div>
     </footer>
+    
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script>
+        function toggleUserMenu() {
+            const menu = document.getElementById('userDropdownMenu');
+            const isVisible = menu.style.display === 'block';
+            menu.style.display = isVisible ? 'none' : 'block';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.user-menu-dropdown');
+            const dropdownMenu = document.getElementById('userDropdownMenu');
+            
+            if (userMenu && !userMenu.contains(event.target)) {
+                dropdownMenu.style.display = 'none';
+            }
+        });
+    </script>
+    
+    <style>
+        /* User Authentication Styles */
+        .left-nav {
+            display: flex;
+            align-items: center;
+        }
+        
+        .right-nav {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .right-nav a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        
+        .right-nav a:hover {
+            color: #0056b3;
+        }
+
+        /* Sign In Link */
+        .sign-in-link {
+            color: #0056b3;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border: 1px solid #0056b3;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .sign-in-link:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+
+        /* User Menu Dropdown */
+        .user-menu-dropdown {
+            position: relative;
+        }
+
+        .user-avatar-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .user-avatar-container:hover {
+            background-color: #f8f9fa;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e9ecef;
+        }
+
+        .user-avatar-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-arrow {
+            color: #666;
+            font-size: 0.7rem;
+            transition: transform 0.3s ease;
+        }
+
+        .user-avatar-container:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Dropdown Menu */
+        .user-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            z-index: 1000;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #0056b3;
+        }
+
+        .dropdown-item.logout-item:hover {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .dropdown-icon {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 0.5rem 0;
+        }
+
+        
+    </style>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

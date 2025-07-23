@@ -26,20 +26,30 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             _context = context;
         }
 
-        public async Task<List<OrderTable>> GetAllOrdersAsync()
+        // Updated to filter by seller ID
+        public async Task<List<OrderTable>> GetAllOrdersAsync(int? sellerId = null)
         {
-            return await _context.OrderTables
-                .Include(o => o.Buyer)
-                .Include(o => o.Address)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .Include(o => o.Payments)
-                .Include(o => o.ShippingInfos)
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
+            var orders = await _context.OrderTables
+    .Include(o => o.Buyer)
+    .Include(o => o.Address)
+    .Include(o => o.OrderItems)
+        .ThenInclude(oi => oi.Product)
+    .Include(o => o.Payments)
+    .Include(o => o.ShippingInfos)
+    .ToListAsync();
+
+            if (sellerId.HasValue)
+            {
+                orders = orders
+                    .Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value))
+                    .ToList();
+            }
+
+            return orders.OrderByDescending(o => o.OrderDate).ToList();
+
         }
 
-        public async Task<List<OrderTable>> GetOrdersByStatusAsync(string status)
+        public async Task<List<OrderTable>> GetOrdersByStatusAsync(string status, int? sellerId = null)
         {
             var query = _context.OrderTables
                 .Include(o => o.Buyer)
@@ -48,53 +58,40 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                     .ThenInclude(oi => oi.Product)
                 .Include(o => o.Payments)
                 .Include(o => o.ShippingInfos)
-                .AsQueryable();
+                .Where(o => o.Status == status);
 
-            switch (status.ToLower())
+            // Filter by seller if provided
+            if (sellerId.HasValue)
             {
-                case "awaiting-payment":
-                case "pending":
-                    query = query.Where(o => o.Status == "Pending");
-                    break;
-                case "awaiting-shipment":
-                case "paid":
-                    query = query.Where(o => o.Status == "Paid");
-                    break;
-                case "shipped":
-                    query = query.Where(o => o.Status == "Shipped");
-                    break;
-                case "delivered":
-                case "completed":
-                    query = query.Where(o => o.Status == "Delivered");
-                    break;
-                case "cancelled":
-                    query = query.Where(o => o.Status == "Cancelled");
-                    break;
-                case "refunded":
-                    query = query.Where(o => o.Status == "Refunded");
-                    break;
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
             }
 
             return await query.OrderByDescending(o => o.OrderDate).ToListAsync();
         }
 
-        public async Task<OrderTable?> GetOrderDetailsAsync(int orderId)
+        public async Task<OrderTable?> GetOrderDetailsAsync(int orderId, int? sellerId = null)
         {
-            return await _context.OrderTables
+            var query = _context.OrderTables
                 .Include(o => o.Buyer)
                 .Include(o => o.Address)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product!.Category)
                 .Include(o => o.Payments)
                 .Include(o => o.ShippingInfos)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+                .Where(o => o.Id == orderId);
+
+            // Filter by seller if provided
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
+            return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus)
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus, int? sellerId = null)
         {
-            var order = await _context.OrderTables.FindAsync(orderId);
+            var order = await GetOrderDetailsAsync(orderId, sellerId);
             if (order == null) 
             {
                 return false;
@@ -112,12 +109,12 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             return true;
         }
 
-        public async Task<bool> ShipOrderAsync(int orderId, string trackingNumber, string carrier)
+        public async Task<bool> ShipOrderAsync(int orderId, string trackingNumber, string carrier, int? sellerId = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var order = await _context.OrderTables.FindAsync(orderId);
+                var order = await GetOrderDetailsAsync(orderId, sellerId);
                 if (order == null) return false;
 
                 var currentStatus = order.Status ?? "Pending";
@@ -136,12 +133,18 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
 
                 order.Status = "Shipped";
 
-                var shippingInfo = await _context.ShippingInfos
-                    .FirstOrDefaultAsync(s => s.OrderId == orderId);
-
-                if (shippingInfo == null)
+                // Add or update shipping information
+                var existingShipping = order.ShippingInfos.FirstOrDefault();
+                if (existingShipping != null)
                 {
-                    shippingInfo = new ShippingInfo
+                    existingShipping.TrackingNumber = trackingNumber;
+                    existingShipping.Carrier = carrier;
+                    existingShipping.Status = "Shipped";
+                    existingShipping.EstimatedArrival = DateTime.Now.AddDays(7);
+                }
+                else
+                {
+                    var shippingInfo = new ShippingInfo
                     {
                         OrderId = orderId,
                         TrackingNumber = trackingNumber,
@@ -151,12 +154,6 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                     };
                     _context.ShippingInfos.Add(shippingInfo);
                 }
-                else
-                {
-                    shippingInfo.TrackingNumber = trackingNumber;
-                    shippingInfo.Carrier = carrier;
-                    shippingInfo.Status = "Shipped";
-                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -165,57 +162,34 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             catch
             {
                 await transaction.RollbackAsync();
-                return false;
+                throw;
             }
         }
 
-        public async Task<bool> CancelOrderAsync(int orderId, string reason)
+        public async Task<bool> CancelOrderAsync(int orderId, string reason, int? sellerId = null)
+        {
+            var order = await GetOrderDetailsAsync(orderId, sellerId);
+            if (order == null) return false;
+
+            var currentStatus = order.Status ?? "Pending";
+            var validationResult = ValidateStatusTransition(currentStatus, "Cancelled");
+            if (!validationResult.IsValid)
+            {
+                throw new InvalidOperationException(validationResult.ErrorMessage);
+            }
+
+            order.Status = "Cancelled";
+            // Note: In a real application, you might want to add a cancellation reason field
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ProcessRefundAsync(int orderId, decimal amount, string reason, int? sellerId = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var order = await _context.OrderTables
-                    .Include(o => o.Payments)
-                    .FirstOrDefaultAsync(o => o.Id == orderId);
-
-                if (order == null) return false;
-
-                var currentStatus = order.Status ?? "Pending";
-                
-                var validationResult = ValidateStatusTransition(currentStatus, "Cancelled");
-                if (!validationResult.IsValid)
-                {
-                    throw new InvalidOperationException(validationResult.ErrorMessage);
-                }
-
-                order.Status = "Cancelled";
-
-                if (currentStatus == "Paid" && order.Payments.Any())
-                {
-                    var payment = order.Payments.First();
-                    payment.Status = "Cancelled";
-                }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                return false;
-            }
-        }
-
-        public async Task<bool> ProcessRefundAsync(int orderId, decimal amount, string reason)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var order = await _context.OrderTables
-                    .Include(o => o.Payments)
-                    .FirstOrDefaultAsync(o => o.Id == orderId);
-
+                var order = await GetOrderDetailsAsync(orderId, sellerId);
                 if (order == null) return false;
 
                 var currentStatus = order.Status ?? "Pending";
@@ -225,21 +199,19 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                     throw new InvalidOperationException(validationResult.ErrorMessage);
                 }
 
-                var payment = order.Payments.FirstOrDefault();
-                if (payment == null) return false;
+                order.Status = "Refunded";
 
+                // Create refund payment record
                 var refundPayment = new Payment
                 {
                     OrderId = orderId,
                     UserId = order.BuyerId,
-                    Amount = -amount,
-                    Method = payment.Method,
-                    Status = "Refunded",
+                    Amount = -amount, // Negative amount for refund
+                    Method = "Refund",
+                    Status = "Completed",
                     PaidAt = DateTime.Now
                 };
-
                 _context.Payments.Add(refundPayment);
-                order.Status = "Refunded";
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -248,39 +220,53 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             catch
             {
                 await transaction.RollbackAsync();
-                return false;
+                throw;
             }
         }
 
-        public async Task<Dictionary<string, int>> GetOrderStatisticsAsync()
+        public async Task<Dictionary<string, int>> GetOrderStatisticsAsync(int? sellerId = null)
         {
-            var orders = await _context.OrderTables.ToListAsync();
-            
-            return new Dictionary<string, int>
+            var query = _context.OrderTables.AsQueryable();
+
+            // Filter by seller if provided
+            if (sellerId.HasValue)
             {
-                ["Total"] = orders.Count,
-                ["Pending"] = orders.Count(o => o.Status == "Pending"),
-                ["Paid"] = orders.Count(o => o.Status == "Paid"),
-                ["Shipped"] = orders.Count(o => o.Status == "Shipped"),
-                ["Delivered"] = orders.Count(o => o.Status == "Delivered"),
-                ["Cancelled"] = orders.Count(o => o.Status == "Cancelled")
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
+            var statistics = new Dictionary<string, int>
+            {
+                ["Total"] = await query.CountAsync(),
+                ["Pending"] = await query.CountAsync(o => o.Status == "Pending"),
+                ["Paid"] = await query.CountAsync(o => o.Status == "Paid"),
+                ["Processing"] = await query.CountAsync(o => o.Status == "Processing"),
+                ["Shipped"] = await query.CountAsync(o => o.Status == "Shipped"),
+                ["Delivered"] = await query.CountAsync(o => o.Status == "Delivered"),
+                ["Cancelled"] = await query.CountAsync(o => o.Status == "Cancelled"),
+                ["Refunded"] = await query.CountAsync(o => o.Status == "Refunded"),
+                ["Returned"] = await query.CountAsync(o => o.Status == "Returned")
             };
+
+            return statistics;
         }
 
-        public async Task<decimal> GetTotalRevenueAsync()
+        public async Task<decimal> GetTotalRevenueAsync(int? sellerId = null)
         {
-            // CHỈ TÍNH REVENUE TỪ ORDERS ĐÃ DELIVERED
-            return await _context.OrderTables
-                .Where(o => o.Status == "Delivered")
-                .SumAsync(o => o.TotalPrice ?? 0);
+            var query = _context.OrderTables
+                .Where(o => o.Status == "Delivered" || o.Status == "Paid" || o.Status == "Shipped");
+
+            // Filter by seller if provided
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
+            return await query.SumAsync(o => o.TotalPrice ?? 0);
         }
 
-        public async Task<List<Review>> GetOrderProductReviewsByBuyerAsync(int orderId)
+        public async Task<List<Review>> GetOrderProductReviewsByBuyerAsync(int orderId, int? sellerId = null)
         {
-            var order = await _context.OrderTables
-                .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+            var order = await GetOrderDetailsAsync(orderId, sellerId);
 
             if (order == null)
                 return new List<Review>();

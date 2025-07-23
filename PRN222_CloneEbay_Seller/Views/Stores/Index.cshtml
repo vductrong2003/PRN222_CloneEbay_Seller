@@ -1,7 +1,11 @@
-@model List<PRN222_CloneEbay_Seller.Models.Store>
+@model PRN222_CloneEbay_Seller.Models.Store
 @{
-    ViewData["Title"] = "Store Management";
-    int currentSellerId = ViewBag.CurrentSellerId ?? 1;
+    ViewData["Title"] = !string.IsNullOrEmpty(Model.StoreName) ? $"{Model.StoreName} - My Store" : "My Store";
+    var statistics = ViewBag.Statistics as Dictionary<string, object> ?? new Dictionary<string, object>();
+    var products = ViewBag.Products as List<PRN222_CloneEbay_Seller.Models.Product> ?? new List<PRN222_CloneEbay_Seller.Models.Product>();
+    var isEditMode = ViewBag.IsEditMode ?? false;
+    var isNewStore = ViewBag.IsNewStore ?? false;
+    var userEmail = Context.Session.GetString("Email") ?? "";
 }
 
 <!DOCTYPE html>
@@ -9,8 +13,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Store Management | Seller Hub | eBay</title>
-    <link rel="stylesheet" href="~/css/site.css">
+    <title>@ViewData["Title"] | Seller Hub | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    
 </head>
 <body>
     <!-- Seller Hub Header -->
@@ -42,18 +47,16 @@
 
                 <!-- Tab Listings có dropdown -->
                 <div class="tab-wrapper">
-                    <a href="#" class="tab has-dropdown">Listings</a>
+                    <a href="/Listing" class="tab has-dropdown">Listings</a>
                     <div class="dropdown-menu">
-                        <a href="#" class="dropdown-item">Create listing</a>
-                        <a href="#" class="dropdown-item">Active</a>
-                        <a href="#" class="dropdown-item">Unsold</a>
-                        <a href="#" class="dropdown-item">Drafts</a>
-                        <a href="#" class="dropdown-item">Scheduled</a>
-                        <a href="#" class="dropdown-item">Ended</a>
+                        <a href="/Listing/Create" class="dropdown-item">Create listing</a>
+                        <a href="/Listing?status=active" class="dropdown-item">Active</a>
+                        <a href="/Listing?status=inactive" class="dropdown-item">Inactive</a>
+                        <a href="/Listing?status=draft" class="dropdown-item">Drafts</a>
+                        <a href="/Listing?status=scheduled" class="dropdown-item">Scheduled</a>
                     </div>
                 </div>
 
-                <!-- Tab Marketing có dropdown -->
                 <div class="tab-wrapper">
                     <a href="#" class="tab has-dropdown">Marketing</a>
                     <div class="dropdown-menu">
@@ -70,10 +73,11 @@
                 <div class="tab-wrapper">
                     <a href="/Performance" class="tab has-dropdown">Performance</a>
                     <div class="dropdown-menu">
-                        <a href="#" class="dropdown-item">Summary</a>
-                        <a href="#" class="dropdown-item">Seller level</a>
-                        <a href="#" class="dropdown-item">Sales</a>
-                        <a href="#" class="dropdown-item">Traffic</a>
+                        <a href="/Performance" class="dropdown-item">Overview</a>
+                        <a href="/Performance/Dashboard" class="dropdown-item">Dashboard</a>
+                        <a href="/Performance/Sales" class="dropdown-item">Sales</a>
+                        <a href="/Performance/Analytics" class="dropdown-item">Analytics</a>
+                        <a href="/Performance/Products" class="dropdown-item">Products</a>
                     </div>
                 </div>
 
@@ -108,6 +112,8 @@
             </div>
         </div>
 
+        
+
         <!-- Status Messages -->
         @if (TempData["Success"] != null)
         {
@@ -122,223 +128,346 @@
             </div>
         }
 
-        <!-- Page Header -->
-        <div class="page-header">
-            <div class="page-title-section">
-                <h2 class="page-title">Store Management</h2>
-                <p class="page-subtitle">Manage your eBay stores and customize your brand presence</p>
-            </div>
-            
-            <div class="header-actions">
-                <a href="@Url.Action("Create")" class="btn btn-primary">
-                    <span class="btn-icon">➕</span>
-                    Create New Store
+        
+
+        @if (isNewStore)
+        {
+            <!-- New Store Creation State -->
+            <div class="empty-store-state">
+                <div class="empty-store-icon">🏪</div>
+                <div class="empty-store-title">Welcome to Your Store</div>
+                <div class="empty-store-message">
+                    You don't have a store yet. Create your store to start selling and showcase your products to customers.
+                </div>
+                <a href="@Url.Action("Edit")" class="btn btn-primary">
+                    <span class="btn-icon">✨</span>
+                    Create My Store
                 </a>
             </div>
-        </div>
-
-        <!-- Stores Grid -->
-        @if (Model.Any())
+        }
+        else if (isEditMode)
         {
-            <div class="stores-grid">
-                @foreach (var store in Model)
-                {
-                    <div class="store-card">
-                        <div class="store-banner">
-                            @if (!string.IsNullOrEmpty(store.BannerImageUrl))
+            <!-- Edit Mode -->
+            <div class="store-edit-form">
+                <form asp-action="Save" method="post" enctype="multipart/form-data">
+                    @if (!isNewStore)
+                    {
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="SellerId" />
+                    }
+                    
+                    <div class="form-section">
+                        <h3>Basic Information</h3>
+                        
+                        <div class="form-group">
+                            <label asp-for="StoreName">Store Name *</label>
+                            <input asp-for="StoreName" class="form-control" placeholder="Enter your store name" required />
+                            <span asp-validation-for="StoreName" class="invalid-feedback"></span>
+                            <div class="form-help">Choose a unique name that represents your brand</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label asp-for="Description">Store Description</label>
+                            <textarea asp-for="Description" class="form-control" 
+                                      placeholder="Tell customers about your store, what you sell, and what makes you special..."></textarea>
+                            <span asp-validation-for="Description" class="invalid-feedback"></span>
+                            <div class="form-help">Describe your store to help customers understand what you offer</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>Store Banner</h3>
+                        
+                        <div class="form-group">
+                            <label for="bannerFile">Banner Image</label>
+                            
+                            <!-- Upload Options Tabs -->
+                            <div class="upload-tabs">
+                                <button type="button" class="upload-tab active" onclick="switchUploadTab('file')">
+                                    📁 Upload File
+                                </button>
+                                <button type="button" class="upload-tab" onclick="switchUploadTab('url')">
+                                    🔗 Import from URL
+                                </button>
+                            </div>
+                            
+                            <!-- File Upload Tab -->
+                            <div id="fileUploadTab" class="upload-tab-content active">
+                                <div class="file-upload-area" onclick="document.getElementById('bannerFile').click()">
+                                    <div class="file-upload-icon">🖼️</div>
+                                    <div class="file-upload-text">
+                                        Click to upload banner image<br>
+                                        <small>Recommended size: 1200x400px, Max 5MB</small>
+                                    </div>
+                                </div>
+                                <input type="file" id="bannerFile" name="bannerFile" accept="image/*" style="display: none;" />
+                            </div>
+                            
+                            <!-- URL Upload Tab -->
+                            <div id="urlUploadTab" class="upload-tab-content" style="display: none;">
+                                <div class="url-upload-section">
+                                    <input type="url" id="bannerUrl" class="form-control" 
+                                           placeholder="https://example.com/banner-image.jpg" 
+                                           onblur="previewImageFromUrl()" />
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="previewImageFromUrl()">
+                                        👁️ Preview
+                                    </button>
+                                </div>
+                                <div class="form-help">Enter a direct link to an image (JPG, PNG, GIF)</div>
+                            </div>
+                            
+                            <span asp-validation-for="BannerImageUrl" class="invalid-feedback"></span>
+                            
+                            <!-- Current Banner Preview -->
+                            @if (!string.IsNullOrEmpty(Model.BannerImageUrl))
                             {
-                                <img src="@store.BannerImageUrl" alt="@store.StoreName banner" class="store-banner-image" />
-                            }
-                            else
-                            {
-                                <div class="store-banner-placeholder">
-                                    <span class="store-icon">🏪</span>
+                                <div class="current-banner-preview">
+                                    <p><strong>Current Banner:</strong></p>
+                                    <div class="banner-preview-container">
+                                        <img src="@Model.BannerImageUrl" alt="Current banner" class="banner-preview-image" id="currentBannerPreview" />
+                                        <button type="button" class="btn btn-danger btn-sm remove-banner-btn" onclick="removeBanner()">
+                                            🗑️ Remove
+                                        </button>
+                                    </div>
                                 </div>
                             }
                             
-                        </div>
-
-                        <div class="store-content">
-                            <div class="store-header">
-                                <h3 class="store-name">@store.StoreName</h3>
-                                <span class="store-status active">Active</span>
-                            </div>
-
-                            <div class="store-description">
-                                @if (!string.IsNullOrEmpty(store.Description))
-                                {
-                                    <p>@(store.Description.Length > 120 ? store.Description.Substring(0, 120) + "..." : store.Description)</p>
-                                }
-                                else
-                                {
-                                    <p class="no-description">No description provided</p>
-                                }
-                            </div>
-
-                            <div class="store-stats">
-                                <div class="stat-item">
-                                    <span class="stat-icon">📦</span>
-                                    <span class="stat-label">Products</span>
-                                    <span class="stat-value" id="products-@store.Id">-</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-icon">📊</span>
-                                    <span class="stat-label">Orders</span>
-                                    <span class="stat-value" id="orders-@store.Id">-</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-icon">⭐</span>
-                                    <span class="stat-label">Rating</span>
-                                    <span class="stat-value" id="rating-@store.Id">-</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-icon">💰</span>
-                                    <span class="stat-label">Revenue</span>
-                                    <span class="stat-value" id="revenue-@store.Id">-</span>
+                            <!-- New Image Preview -->
+                            <div id="newImagePreview" class="new-image-preview" style="display: none;">
+                                <p><strong>New Banner Preview:</strong></p>
+                                <div class="banner-preview-container">
+                                    <img id="previewImage" class="banner-preview-image" />
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="clearPreview()">
+                                        ❌ Clear
+                                    </button>
                                 </div>
                             </div>
-
-                            <div class="store-footer">
-                                <div class="store-created">
-                                    <span class="created-label">Store ID:</span>
-                                    <span class="created-value">#@store.Id</span>
-                                </div>
-                                <div class="store-actions-buttons">
-                                    <a href="@Url.Action("Details", new { id = store.Id })" class="btn btn-secondary btn-sm">
-                                        View Store
-                                    </a>
-                                    <a href="@Url.Action("Edit", new { id = store.Id })" class="btn btn-primary btn-sm">
-                                        Manage
-                                    </a>
-                                </div>
-                            </div>
+                            
+                            <!-- Hidden field for URL import -->
+                            <input type="hidden" id="bannerUrlInput" name="bannerUrl" />
                         </div>
                     </div>
-                }
+                    
+                    <div class="form-section">
+                        <h3>Contact Information</h3>
+                        <div class="form-help">
+                            <strong>Contact Email:</strong> @userEmail<br>
+                            <small>Customers will use this email for inquiries. You can change this in your account settings.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <span class="btn-icon">❌</span>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-icon">💾</span>
+                            @(isNewStore ? "Create Store" : "Save Changes")
+                        </button>
+                    </div>
+                </form>
             </div>
         }
         else
         {
-            <div class="empty-state">
-                <div class="empty-icon">🏪</div>
-                <div class="empty-title">No Stores Yet</div>
-                <div class="empty-message">
-                    You haven't created any stores yet. Create your first store to start showcasing your products with a professional brand presence.
+            <!-- View Mode -->
+            <div class="store-header">
+                <div class="store-banner-section" style="width : 100%">
+                    @if (!string.IsNullOrEmpty(Model.BannerImageUrl))
+                    {
+                        <img src="@Model.BannerImageUrl" alt="@Model.StoreName banner" class="store-banner-full" />
+                    }
+                    else
+                    {
+                        <div class="store-banner-placeholder-full">
+                            <span class="store-icon-large">🏪</span>
+                            <p class="banner-placeholder-text">@Model.StoreName</p>
+                        </div>
+                    }
+                    
+                    <div class="store-overlay">
+                        <div class="store-title-section">
+                            <h1 class="store-title">@Model.StoreName</h1>
+                            <div class="store-meta">
+                                @if (Model.Id > 0)
+                                {
+                                    <span class="store-id">Store ID: #@Model.Id</span>
+                                }
+                                <span class="store-status-badge active">Active</span>
+                            </div>
+                        </div>
+                        
+                        <div class="store-actions-header">
+                            <a href="@Url.Action("Edit")" class="btn btn-primary">
+                                <span class="btn-icon">✏️</span>
+                                Edit Store
+                            </a>
+                            
+                        </div>
+                    </div>
                 </div>
-                <div class="empty-actions">
-                    <a href="@Url.Action("Create")" class="btn btn-primary btn-lg">
-                        <span class="btn-icon">➕</span>
-                        Create Your First Store
-                    </a>
+            </div>
+
+            <!-- Store Content Grid -->
+            <div class="store-content-grid">
+                <!-- Left Column: Store Info -->
+                <div class="store-main-content">
+                    <!-- Store Description -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Store Description</h3>
+                            <a href="@Url.Action("Edit")" class="btn btn-outline btn-sm">
+                                <span class="btn-icon">✏️</span>
+                                Edit
+                            </a>
+                        </div>
+                        <div class="panel-body">
+                            @if (!string.IsNullOrEmpty(Model.Description))
+                            {
+                                <p style="padding: 1.25rem; margin: 0; line-height: 1.6;">@Model.Description</p>
+                            }
+                            else
+                            {
+                                <div style="text-align: center; padding: 2.5rem 1.25rem; color: #666;">
+                                    <span style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.5;">📝</span>
+                                    <p style="margin: 0 0 1.5rem 0;">No description provided. Add a description to help customers learn about your store.</p>
+                                    <a href="@Url.Action("Edit")" class="btn btn-outline">Add Description</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Store Contact Info -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Contact Information</h3>
+                        </div>
+                        <div style="padding: 1.25rem;">
+                            <p style="margin: 0; color: #666;">
+                                <strong>Email:</strong> @userEmail<br>
+                                <small>This is your primary contact email for customer inquiries.</small>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="empty-features">
-                    <h4>Why create a store?</h4>
-                    <ul class="features-list">
-                        <li>
-                            <span class="feature-icon">🎨</span>
-                            <span class="feature-text">Customize your brand with banners and descriptions</span>
-                        </li>
-                        <li>
-                            <span class="feature-icon">📈</span>
-                            <span class="feature-text">Track performance and analytics</span>
-                        </li>
-                        <li>
-                            <span class="feature-icon">🛍️</span>
-                            <span class="feature-text">Organize products by categories</span>
-                        </li>
-                        <li>
-                            <span class="feature-icon">⭐</span>
-                            <span class="feature-text">Build customer trust and loyalty</span>
-                        </li>
-                    </ul>
+
+                <!-- Right Column: Statistics -->
+                <div class="store-sidebar" style="
+    width: 100%;
+    ">
+                    <!-- Store Statistics -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Store Performance</h3>
+                        </div>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #8B4513;">📦</div>
+                                <div class="stat-value">@(statistics.GetValueOrDefault("TotalProducts", 0))</div>
+                                <div class="stat-label">Total Products</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #28a745;">✅</div>
+                                <div class="stat-value">@(statistics.GetValueOrDefault("ActiveProducts", 0))</div>
+                                <div class="stat-label">Active Products</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #6c757d;">🛒</div>
+                                <div class="stat-value">@(statistics.GetValueOrDefault("TotalOrders", 0))</div>
+                                <div class="stat-label">Total Orders</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #fd7e14;">💰</div>
+                                <div class="stat-value">$@(Convert.ToDecimal(statistics.GetValueOrDefault("TotalRevenue", 0)).ToString("N0"))</div>
+                                <div class="stat-label">Total Revenue</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #ffc107;">⭐</div>
+                                <div class="stat-value">@(statistics.GetValueOrDefault("AverageRating", 0))</div>
+                                <div class="stat-label">Avg Rating</div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #6f42c1;">📝</div>
+                                <div class="stat-value">@(statistics.GetValueOrDefault("TotalReviews", 0))</div>
+                                <div class="stat-label">Reviews</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Quick Actions</h3>
+                        </div>
+                        <div style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                            <a href="/Listing" class="btn btn-outline">
+                                <span class="btn-icon">📦</span>
+                                Manage Products
+                            </a>
+                            <a href="/Orders" class="btn btn-outline">
+                                <span class="btn-icon">🛒</span>
+                                View Orders
+                            </a>
+                            <a href="/Performance" class="btn btn-outline">
+                                <span class="btn-icon">📊</span>
+                                View Analytics
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         }
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Delete Store</h3>
-                <span class="close" onclick="closeModal('deleteModal')">&times;</span>
+    <div id="deleteModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); align-items: center; justify-content: center;">
+        <div style="background-color: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); width: 90%; max-width: 500px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e5e5;">
+                <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600; color: #111;">Delete Store</h3>
+                <span onclick="closeModal('deleteModal')" style="color: #999; font-size: 1.5rem; font-weight: bold; cursor: pointer; line-height: 1;">&times;</span>
             </div>
-            <div class="modal-body">
-                <div class="warning-icon">⚠️</div>
-                <p>Are you sure you want to delete the store "<span id="storeNameToDelete"></span>"?</p>
-                <p class="warning-text">This action cannot be undone. All store data will be permanently deleted.</p>
+            <div style="text-align: center; padding: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <p>Are you sure you want to delete your store "<span id="storeNameToDelete"></span>"?</p>
+                <p style="color: #dc3545; font-size: 0.875rem; font-weight: 500; margin-top: 0.5rem;">This action cannot be undone. All store data will be permanently deleted.</p>
             </div>
-            <div class="modal-footer">
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e1e1e1;">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Store</button>
             </div>
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2024 eBay Clone. All rights reserved.</p>
-    </footer>
-
     <script>
-        // Load store statistics
-        document.addEventListener('DOMContentLoaded', function() {
-            @foreach (var store in Model)
-            {
-                <text>loadStoreStats(@store.Id);</text>
-            }
-        });
-
-        async function loadStoreStats(storeId) {
-            try {
-                const response = await fetch(`/Stores/GetStatistics/${storeId}`);
-                if (response.ok) {
-                    const stats = await response.json();
-                    
-                    document.getElementById(`products-${storeId}`).textContent = stats.totalProducts || 0;
-                    document.getElementById(`orders-${storeId}`).textContent = stats.totalOrders || 0;
-                    document.getElementById(`rating-${storeId}`).textContent = stats.averageRating ? `${stats.averageRating}/5` : 'N/A';
-                    document.getElementById(`revenue-${storeId}`).textContent = stats.totalRevenue ? `$${stats.totalRevenue.toFixed(2)}` : '$0.00';
-                }
-            } catch (error) {
-                console.error('Error loading store stats:', error);
-            }
-        }
-
-        function toggleDropdown(storeId) {
-            const dropdown = document.getElementById(`dropdown-${storeId}`);
-            const isVisible = dropdown.style.display !== 'none';
-            
-            // Close all dropdowns
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                menu.style.display = 'none';
-            });
-            
-            // Toggle current dropdown
-            dropdown.style.display = isVisible ? 'none' : 'block';
-        }
-
-        function confirmDeleteStore(storeId, storeName) {
+        function confirmDeleteStore(storeName) {
             document.getElementById('storeNameToDelete').textContent = storeName;
             document.getElementById('confirmDeleteBtn').onclick = function() {
-                deleteStore(storeId);
+                deleteStore();
             };
-            document.getElementById('deleteModal').style.display = 'block';
+            document.getElementById('deleteModal').style.display = 'flex';
         }
 
-        async function deleteStore(storeId) {
+        async function deleteStore() {
             try {
-                const response = await fetch(`/Stores/Delete/${storeId}`, {
+                const response = await fetch('/Stores/Delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
                     }
                 });
 
                 const result = await response.json();
                 
                 if (result.success) {
-                    location.reload(); // Refresh the page
+                    window.location.reload();
                 } else {
                     alert(result.message || 'Failed to delete store');
                 }
@@ -354,21 +483,947 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('.store-actions-dropdown')) {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                    menu.style.display = 'none';
-                });
-            }
-        });
-
         // Close modal when clicking outside
         window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
+            if (event.target.id === 'deleteModal') {
                 event.target.style.display = 'none';
             }
         }
+
+        // File upload preview
+        document.getElementById('bannerFile')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const uploadArea = document.querySelector('.file-upload-area');
+                uploadArea.querySelector('.file-upload-text').innerHTML = 
+                    `Selected: ${file.name}<br><small>Click to change</small>`;
+                
+                // Show file preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('previewImage');
+                    preview.src = e.target.result;
+                    document.getElementById('newImagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Switch upload tab
+        function switchUploadTab(tab) {
+            // Clear previews when switching tabs
+            clearPreview();
+            
+            if (tab === 'file') {
+                document.getElementById('fileUploadTab').style.display = 'block';
+                document.getElementById('urlUploadTab').style.display = 'none';
+                document.querySelector('.upload-tab.active').classList.remove('active');
+                document.querySelector('.upload-tab:nth-child(1)').classList.add('active');
+            } else {
+                document.getElementById('fileUploadTab').style.display = 'none';
+                document.getElementById('urlUploadTab').style.display = 'block';
+                document.querySelector('.upload-tab.active').classList.remove('active');
+                document.querySelector('.upload-tab:nth-child(2)').classList.add('active');
+            }
+        }
+
+        // Preview image from URL
+        function previewImageFromUrl() {
+            const url = document.getElementById('bannerUrl').value;
+            const preview = document.getElementById('previewImage');
+            
+            if (url) {
+                // Validate URL format
+                try {
+                    new URL(url);
+                } catch {
+                    alert('Please enter a valid URL');
+                    return;
+                }
+                
+                // Test if image loads
+                const testImg = new Image();
+                testImg.onload = function() {
+                    preview.src = url;
+                    document.getElementById('newImagePreview').style.display = 'block';
+                    document.getElementById('bannerUrlInput').value = url; // Set hidden field
+                };
+                testImg.onerror = function() {
+                    alert('Could not load image from this URL. Please check the URL and try again.');
+                };
+                testImg.src = url;
+            } else {
+                clearPreview();
+            }
+        }
+
+        // Clear new image preview
+        function clearPreview() {
+            document.getElementById('previewImage').src = '';
+            document.getElementById('newImagePreview').style.display = 'none';
+            document.getElementById('bannerUrl').value = '';
+            document.getElementById('bannerUrlInput').value = '';
+            
+            // Reset file input
+            document.getElementById('bannerFile').value = '';
+            const uploadArea = document.querySelector('.file-upload-area');
+            if (uploadArea) {
+                uploadArea.querySelector('.file-upload-text').innerHTML = 
+                    'Click to upload banner image<br><small>Recommended size: 1200x400px, Max 5MB</small>';
+            }
+        }
+
+        // Remove banner image
+        function removeBanner() {
+            if (confirm('Are you sure you want to remove this banner image?')) {
+                document.querySelector('.current-banner-preview').style.display = 'none';
+                // Set a flag to remove banner on server
+                document.getElementById('bannerUrlInput').value = 'REMOVE_BANNER';
+            }
+        }
     </script>
+
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }
+
+    <style>
+        
+        
+        
+
+
+        .right-nav {
+            margin-left: auto;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .right-nav a {
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .right-nav a:hover {
+            color: #007bff;
+            background: rgba(0, 123, 255, 0.1);
+        }
+
+        /* Breadcrumb styles */
+        .breadcrumb {
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+            padding: 1rem 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #007bff;
+        }
+
+        .breadcrumb a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb a:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        /* Page header styles */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 123, 255, 0.1);
+        }
+
+        .page-title-section {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .page-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2c3e50 0%, #007bff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+            position: relative;
+        }
+
+        .page-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            border-radius: 2px;
+        }
+
+        .header-actions .btn-primary,
+        .header-actions .btn-secondary {
+            padding: 0.875rem 2rem;
+            border: none;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header-actions .btn-primary::before,
+        .header-actions .btn-secondary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .header-actions .btn-primary:hover::before,
+        .header-actions .btn-secondary:hover::before {
+            left: 100%;
+        }
+
+        .header-actions .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .header-actions .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+
+        .header-actions .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .header-actions .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        }
+        
+        /* Store Header Section */
+        .store-header {
+            margin-bottom: 3rem;
+        }
+        
+        .store-banner-section {
+            position: relative;
+            height: 350px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .store-banner-full {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .store-banner-section:hover .store-banner-full {
+            transform: scale(1.02);
+        }
+        
+        .store-banner-placeholder-full {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            color: white;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .store-icon-large {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        
+        .store-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            padding: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .store-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: white;
+            margin: 0 0 0.75rem 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .store-meta {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        
+        .store-id {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .store-status-badge {
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            letter-spacing: 0.5px;
+        }
+        
+        .store-actions-header {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        /* Edit Form Styles */
+        .store-edit-form {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 123, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .store-edit-form::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #28a745, #ffc107, #dc3545);
+        }
+        
+        .form-section {
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .form-section h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2c3e50 0%, #007bff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f2f5;
+            position: relative;
+        }
+
+        .form-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 80px;
+            height: 2px;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+        }
+        
+        .form-group {
+            margin-bottom: 2rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fafbfc;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+        }
+        
+        .invalid-feedback {
+            display: block;
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .form-help {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        
+        textarea.form-control {
+            min-height: 140px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        /* Upload styles */
+        .file-upload-area {
+            border: 3px dashed #007bff;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.02) 0%, rgba(0, 123, 255, 0.05) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(0, 123, 255, 0.1), transparent);
+            transition: transform 0.6s;
+            transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        }
+
+        .file-upload-area:hover::before {
+            transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
+        
+        .file-upload-area:hover {
+            border-color: #0056b3;
+            background: linear-gradient(135deg, rgba(0, 123, 255, 0.05) 0%, rgba(0, 123, 255, 0.1) 100%);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+        }
+        
+        .file-upload-icon {
+            font-size: 4rem;
+            color: #007bff;
+            margin-bottom: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+
+        .file-upload-text {
+            color: #495057;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        /* Upload tabs and preview styles */
+        .upload-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 0.5rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        
+        .upload-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-weight: 700;
+            color: #6c757d;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+        }
+        
+        .upload-tab.active {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .upload-tab:hover:not(.active) {
+            color: #007bff;
+            background: rgba(0, 123, 255, 0.1);
+        }
+        
+        .upload-tab-content {
+            margin-top: 1.5rem;
+        }
+        
+        .url-upload-section {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        
+        .url-upload-section .form-control {
+            flex: 1;
+        }
+        
+        .btn-sm {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        
+        /* Banner preview styles */
+        .banner-preview-container {
+            position: relative;
+            display: inline-block;
+            margin-top: 1.5rem;
+        }
+        
+        .banner-preview-image {
+            max-width: 350px;
+            max-height: 180px;
+            border-radius: 12px;
+            border: 3px solid #e9ecef;
+            display: block;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .banner-preview-image:hover {
+            transform: scale(1.02);
+        }
+        
+        .remove-banner-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+        
+        .new-image-preview {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px;
+            border: 2px solid #007bff;
+            box-shadow: 0 4px 20px rgba(0, 123, 255, 0.1);
+        }
+        
+        .new-image-preview p {
+            margin: 0 0 1rem 0;
+            font-weight: 700;
+            color: #007bff;
+            font-size: 1.1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: flex-end;
+            padding-top: 2.5rem;
+            border-top: 2px solid #f0f2f5;
+            margin-top: 2rem;
+        }
+        
+        /* Store Content Grid */
+        .store-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+        
+        .store-main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .store-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        /* Panel Styling */
+        .panel {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #2c3e50;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0;
+        }
+        
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 2rem 1.5rem;
+            border-right: 1px solid #f0f2f5;
+            border-bottom: 1px solid #f0f2f5;
+            background: linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%);
+            min-height: 140px;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 123, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-card:hover {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            transform: scale(1.02);
+        }
+        
+        .stat-card:nth-child(2n) {
+            border-right: none;
+        }
+        
+        .stat-card:nth-child(5),
+        .stat-card:nth-child(6) {
+            border-bottom: none;
+        }
+        
+        .stat-card .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+        
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        
+        /* Empty state styles */
+        .empty-store-state {
+            text-align: center;
+            padding: 4rem 3rem;
+            background: linear-gradient(135deg, white 0%, #f8f9fa 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            margin-bottom: 3rem;
+            border: 1px solid rgba(0, 123, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .empty-store-state::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #28a745, #ffc107);
+        }
+        
+        .empty-store-icon {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+            animation: pulse 2s infinite;
+        }
+
+        .empty-store-title {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2c3e50 0%, #007bff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+        }
+        
+        .empty-store-message {
+            color: #6c757d;
+            margin-bottom: 2.5rem;
+            line-height: 1.7;
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Button styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #007bff;
+            color: #007bff;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.1);
+        }
+        
+        .btn-outline:hover {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-icon {
+            margin-right: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        /* Status messages */
+        .status-message {
+            padding: 1.25rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+        
+        .status-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+        }
+
+        .status-success::before {
+            background: #28a745;
+        }
+        
+        .status-error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+        }
+
+        .status-error::before {
+            background: #dc3545;
+        }
+        
+    </style>
 </body>
 </html>

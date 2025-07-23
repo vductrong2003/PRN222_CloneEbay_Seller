@@ -1,0 +1,136 @@
+@model PRN222_CloneEbay_Seller.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Sign in to eBay Seller Central";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">
+                <i class="fas fa-store"></i>
+                Sign in to Seller Central
+            </h1>
+            <p class="auth-subtitle">Access your seller dashboard and manage your business</p>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                @TempData["Success"]
+            </div>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                @TempData["Error"]
+            </div>
+        }
+
+        @if (TempData["Warning"] != null)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                @TempData["Warning"]
+            </div>
+        }
+
+        @if (TempData["Info"] != null)
+        {
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                @TempData["Info"]
+            </div>
+        }
+
+        <form asp-action="Login" method="post" class="auth-form">
+            @Html.AntiForgeryToken()
+            
+            <div class="form-group">
+                <label asp-for="EmailOrUsername" class="form-label">
+                    <i class="fas fa-user"></i>
+                    Email or Username
+                </label>
+                <input asp-for="EmailOrUsername" class="form-control" placeholder="Enter your email or username" autocomplete="username" autofocus />
+                <span asp-validation-for="EmailOrUsername" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password" class="form-label">
+                    <i class="fas fa-lock"></i>
+                    Password
+                </label>
+                <div class="password-input-group">
+                    <input asp-for="Password" class="form-control" placeholder="Enter your password" autocomplete="current-password" />
+                    <button type="button" class="password-toggle" onclick="togglePassword('Password')">
+                        <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                    </button>
+                </div>
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-options">
+                
+                <a asp-action="ForgotPassword" class="forgot-password-link">
+                    Forgot password?
+                </a>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+
+            <button type="submit" class="btn btn-primary btn-login">
+                <i class="fas fa-sign-in-alt"></i>
+                Sign In
+            </button>
+        </form>
+
+        
+
+        <div class="auth-footer">
+            <a asp-action="Register" class="btn btn-outline-primary btn-register">
+                <i class="fas fa-user-plus"></i>
+                Create Seller Account
+            </a>
+        </div>
+
+       
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const toggleIcon = document.getElementById('passwordToggleIcon');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.className = 'fas fa-eye-slash';
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.className = 'fas fa-eye';
+            }
+        }
+
+        // Auto-focus first input
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstInput = document.querySelector('input[autofocus]');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        });
+
+        // Enter key support
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const form = document.querySelector('.auth-form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    </script>
+}

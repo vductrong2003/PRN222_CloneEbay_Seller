@@ -1,507 +1,496 @@
-﻿/* eBay Account Pages Styles */
-:root {
-    --ebay-blue: #0654ba;
-    --ebay-blue-hover: #0f4fa8;
-    --ebay-red: #e53935;
-    --ebay-gray: #707070;
-    --ebay-light-gray: #f5f5f5;
-    --ebay-border: #cccccc;
-    --ebay-green: #1b7a3d;
-    --ebay-black: #191919;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-body.account-body {
-    font-family: "Helvetica Neue", Arial, sans-serif;
+﻿/* Account Layout Styling */
+.account-body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #ffffff;
-    color: var(--ebay-black);
-    line-height: 1.4;
 }
 
 .account-container {
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
-}
-
-.account-content {
-    flex: 1;
-    display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     padding: 20px;
 }
 
-/* Sign Up Container */
-.ebay-signup-container, .ebay-signin-container {
-    max-width: 400px;
+.account-content {
     width: 100%;
-    padding: 0 16px;
+    max-width: 450px;
 }
 
-/* Header */
-.signup-header, .signin-header {
+/* Auth Card */
+.auth-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.register-card {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Auth Header */
+.auth-header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 30px;
 }
 
-.ebay-logo img {
-    height: 48px;
-    margin-bottom: 24px;
+.auth-title {
+    color: #2c3e50;
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
 }
 
-.signup-header h1, .signin-header h1 {
-    font-size: 32px;
-    font-weight: 400;
-    margin: 0 0 8px 0;
-    color: var(--ebay-black);
+.auth-title i {
+    color: #667eea;
+    font-size: 2rem;
 }
 
-.signup-subtitle, .signin-subtitle {
-    font-size: 16px;
-    color: var(--ebay-gray);
-    margin: 0;
+.auth-subtitle {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+    margin-bottom: 0;
 }
 
-/* Form Container */
-.signup-form-container, .signin-form-container {
-    background: #ffffff;
-    padding: 0;
-}
-
-/* Form Styles */
-.ebay-form {
-    width: 100%;
+/* Form Styling */
+.auth-form {
+    margin-bottom: 30px;
 }
 
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 25px;
+}
+
+.form-group.half-width {
+    width: 48%;
+    display: inline-block;
+}
+
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
 }
 
 .form-label {
     display: block;
-    font-size: 14px;
     font-weight: 600;
-    color: var(--ebay-black);
+    color: #2c3e50;
     margin-bottom: 8px;
+    font-size: 0.95rem;
 }
 
-    .form-label.required::after {
-        content: " *";
-        color: var(--ebay-red);
-    }
+.form-label i {
+    color: #667eea;
+    margin-right: 8px;
+    width: 16px;
+}
 
 .form-control {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--ebay-border);
-    border-radius: 4px;
-    font-size: 16px;
-    background-color: #ffffff;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    padding: 15px 20px;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
 }
 
-    .form-control:focus {
-        outline: none;
-        border-color: var(--ebay-blue);
-        box-shadow: 0 0 0 2px rgba(6, 84, 186, 0.1);
-    }
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
 
-    .form-control.is-invalid {
-        border-color: var(--ebay-red);
-    }
+.form-text {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
 
-/* Password Container */
-.password-container {
+/* Password Input Group */
+.password-input-group {
     position: relative;
 }
 
 .password-toggle {
     position: absolute;
-    right: 12px;
+    right: 15px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
+    color: #7f8c8d;
     cursor: pointer;
-    color: var(--ebay-gray);
-    padding: 4px;
+    padding: 5px;
 }
 
-    .password-toggle:hover {
-        color: var(--ebay-blue);
-    }
-
-/* Password Requirements */
-.password-requirements {
-    margin-top: 8px;
+.password-toggle:hover {
+    color: #667eea;
 }
-
-    .password-requirements ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        font-size: 12px;
-    }
-
-    .password-requirements li {
-        color: var(--ebay-gray);
-        padding: 2px 0;
-        position: relative;
-        padding-left: 16px;
-    }
-
-        .password-requirements li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-        }
-
-        .password-requirements li.valid {
-            color: var(--ebay-green);
-        }
-
-            .password-requirements li.valid::before {
-                content: "✓";
-                color: var(--ebay-green);
-            }
-
-/* Phone Input */
-.phone-input-container {
-    display: flex;
-}
-
-.country-code-select {
-    width: 100px;
-    margin-right: 8px;
-    flex-shrink: 0;
-}
-
-.phone-input {
-    flex: 1;
-}
-
-/* Date Input */
-.date-input-container {
-    display: flex;
-    gap: 8px;
-}
-
-.date-select {
-    flex: 1;
-}
-
-/* Checkbox Group */
-.checkbox-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-}
-
-.checkbox-container {
-    display: flex;
-    align-items: flex-start;
-    cursor: pointer;
-    font-size: 14px;
-    line-height: 1.4;
-    flex: 1;
-}
-
-    .checkbox-container input[type="checkbox"] {
-        display: none;
-    }
-
-.checkmark {
-    width: 16px;
-    height: 16px;
-    border: 1px solid var(--ebay-border);
-    border-radius: 2px;
-    margin-right: 12px;
-    flex-shrink: 0;
-    position: relative;
-    margin-top: 2px;
-}
-
-.checkbox-container input[type="checkbox"]:checked + .checkmark {
-    background-color: var(--ebay-blue);
-    border-color: var(--ebay-blue);
-}
-
-    .checkbox-container input[type="checkbox"]:checked + .checkmark::after {
-        content: "✓";
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        color: white;
-        font-size: 10px;
-    }
-
-.checkbox-text {
-    color: var(--ebay-gray);
-}
-
-.forgot-password-link {
-    color: var(--ebay-blue);
-    text-decoration: none;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-    .forgot-password-link:hover {
-        text-decoration: underline;
-    }
 
 /* Buttons */
 .btn {
-    width: 100%;
-    padding: 12px 24px;
-    border-radius: 20px;
-    font-size: 16px;
+    padding: 15px 30px;
+    border-radius: 12px;
     font-weight: 600;
-    text-align: center;
+    font-size: 1rem;
     text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
     border: none;
-    margin-bottom: 12px;
+    cursor: pointer;
+    width: 100%;
 }
 
 .btn-primary {
-    background-color: var(--ebay-blue);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
-    .btn-primary:hover {
-        background-color: var(--ebay-blue-hover);
-    }
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+}
 
-.btn-google, .btn-facebook, .btn-apple {
-    background-color: white;
-    color: var(--ebay-black);
-    border: 1px solid var(--ebay-border);
+.btn-outline-primary {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline-primary:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Form Options */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.checkbox-group {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
+    gap: 10px;
 }
 
-    .btn-google:hover, .btn-facebook:hover, .btn-apple:hover {
-        background-color: var(--ebay-light-gray);
-    }
-
-.btn img {
-    width: 20px;
-    height: 20px;
+.checkbox-label {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Social Sign In */
-.social-signin {
-    margin-bottom: 24px;
-}
-
-/* Alternative Sign Up */
-.alternative-signup {
-    margin-top: 32px;
-}
-
-/* Dividers */
-.divider {
-    text-align: center;
-    margin: 24px 0;
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #e1e8ed;
+    border-radius: 4px;
+    display: inline-block;
     position: relative;
 }
 
-    .divider::before {
-        content: "";
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background-color: var(--ebay-border);
-    }
-
-    .divider span {
-        background-color: white;
-        padding: 0 16px;
-        color: var(--ebay-gray);
-        font-size: 14px;
-    }
-
-.divider-thin {
-    height: 1px;
-    background-color: var(--ebay-border);
-    margin: 24px 0;
+input[type="checkbox"]:checked + .checkbox-label .checkmark {
+    background: #667eea;
+    border-color: #667eea;
 }
 
-/* Links */
-.link {
-    color: var(--ebay-blue);
+input[type="checkbox"]:checked + .checkbox-label .checkmark::after {
+    content: "✓";
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.forgot-password-link {
+    color: #667eea;
     text-decoration: none;
+    font-size: 0.9rem;
 }
 
-    .link:hover {
-        text-decoration: underline;
-        color: var(--ebay-blue-hover);
-    }
+.forgot-password-link:hover {
+    text-decoration: underline;
+}
 
-/* Sign In Link */
-.signin-link-container {
+/* Divider */
+.auth-divider {
     text-align: center;
-    margin-top: 24px;
-    font-size: 14px;
+    margin: 30px 0;
+    position: relative;
 }
 
-.create-account-container {
-    margin-top: 24px;
+.auth-divider::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e1e8ed;
 }
 
-.create-account-text {
+.auth-divider span {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 0 20px;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Footer */
+.auth-footer {
     text-align: center;
-    font-size: 14px;
-    margin: 16px 0 0 0;
 }
 
-/* Business Account Link */
-.business-account-link {
+/* Help Section */
+.help-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e8ed;
+}
+
+.help-section h3 {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+}
+
+.help-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.help-section li {
+    margin-bottom: 8px;
+}
+
+.help-section a {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.help-section a:hover {
+    text-decoration: underline;
+}
+
+/* Registration Benefits */
+.registration-benefits {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 12px;
+}
+
+.benefit-item {
     text-align: center;
-    margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid var(--ebay-border);
+    flex: 1;
+}
+
+.benefit-item i {
+    color: #667eea;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.benefit-item span {
+    font-size: 0.85rem;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+/* Password Info Box */
+.password-info-box {
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.password-info-box h4 {
+    color: #2c3e50;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.password-info-box p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.password-info-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.password-info-box li {
+    color: #2c3e50;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.password-info-box i.fa-check {
+    color: #27ae60;
+}
+
+/* Alerts */
+.alert {
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alert-success {
+    background: rgba(39, 174, 96, 0.1);
+    border: 1px solid rgba(39, 174, 96, 0.2);
+    color: #27ae60;
+}
+
+.alert-danger {
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.alert-warning {
+    background: rgba(243, 156, 18, 0.1);
+    border: 1px solid rgba(243, 156, 18, 0.2);
+    color: #f39c12;
+}
+
+.alert-info {
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid rgba(52, 152, 219, 0.2);
+    color: #3498db;
 }
 
 /* Validation */
-.field-validation-error {
-    color: var(--ebay-red);
-    font-size: 12px;
-    margin-top: 4px;
+.text-danger {
+    color: #e74c3c !important;
+    font-size: 0.85rem;
+    margin-top: 5px;
     display: block;
 }
 
 .validation-summary {
-    background-color: #ffebee;
-    border: 1px solid var(--ebay-red);
-    border-radius: 4px;
-    padding: 12px;
-    margin-bottom: 16px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
 }
 
-    .validation-summary ul {
-        margin: 0;
-        padding: 0;
-        list-style: none;
+/* Responsive */
+@media (max-width: 768px) {
+    .auth-card {
+        padding: 30px 20px;
+        margin: 10px;
     }
-
-    .validation-summary li {
-        color: var(--ebay-red);
-        font-size: 14px;
+    
+    .auth-title {
+        font-size: 1.8rem;
     }
-
-/* Form Text */
-.form-text {
-    font-size: 12px;
-    color: var(--ebay-gray);
-    margin-top: 4px;
-    display: block;
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-group.half-width {
+        width: 100%;
+    }
+    
+    .registration-benefits {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
-/* Footer */
+/* Account Footer */
 .account-footer {
-    background-color: #f5f5f5;
-    padding: 32px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px 0;
     margin-top: 40px;
 }
 
 .footer-content {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 20px;
+    text-align: center;
 }
 
 .footer-links {
-    text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 15px;
 }
 
-    .footer-links a {
-        color: var(--ebay-blue);
-        text-decoration: none;
-        font-size: 12px;
-        margin: 0 8px;
-    }
+.footer-links a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin: 0 10px;
+}
 
-        .footer-links a:hover {
-            text-decoration: underline;
-        }
+.footer-links a:hover {
+    color: white;
+    text-decoration: underline;
+}
 
 .footer-copyright {
-    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
 }
 
-    .footer-copyright p {
-        font-size: 11px;
-        color: var(--ebay-gray);
-        margin: 0;
-        line-height: 1.4;
-    }
-
-    .footer-copyright a {
-        color: var(--ebay-blue);
-        text-decoration: none;
-    }
-
-        .footer-copyright a:hover {
-            text-decoration: underline;
-        }
-
-/* Responsive */
-@media (max-width: 768px) {
-    .account-content {
-        padding: 16px;
-    }
-
-    .ebay-signup-container, .ebay-signin-container {
-        padding: 0;
-    }
-
-    .date-input-container {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .phone-input-container {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .country-code-select {
-        width: 100%;
-        margin-right: 0;
-    }
-
-    .checkbox-group {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .footer-links a {
-        display: block;
-        margin: 4px 0;
-    }
+.footer-copyright a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
 }
 
-@media (max-width: 480px) {
-    .signup-header h1, .signin-header h1 {
-        font-size: 24px;
-    }
-
-    .form-control {
-        font-size: 16px; /* Prevent zoom on iOS */
-    }
+.footer-copyright a:hover {
+    text-decoration: underline;
 }
