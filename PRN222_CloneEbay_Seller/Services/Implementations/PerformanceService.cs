@@ -13,17 +13,17 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             _context = context;
         }
 
-        public async Task<Dictionary<string, object>> GetPerformanceOverviewAsync(int days = 30)
+        public async Task<Dictionary<string, object>> GetPerformanceOverviewAsync(int days = 30, int? sellerId = null)
         {
             var startDate = DateTime.Now.AddDays(-days);
 
-            var orderStats = await GetOrderStatisticsAsync(days);
-            var totalRevenue = await GetTotalRevenueAsync(days);
+            var orderStats = await GetOrderStatisticsAsync(days, sellerId);
+            var totalRevenue = await GetTotalRevenueAsync(days, sellerId);
             var totalOrders = orderStats.GetValueOrDefault("Total", 0);
             var deliveredOrders = orderStats.GetValueOrDefault("Delivered", 0);
 
             // Calculate growth (comparing with previous period)
-            var previousRevenue = await GetTotalRevenueAsync(days * 2, days);
+            var previousRevenue = await GetTotalRevenueAsync(days * 2, days, sellerId);
             var revenueGrowth = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
             var averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
@@ -40,13 +40,21 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             };
         }
 
-        public async Task<Dictionary<string, object>> GetRevenueChartDataAsync(int days = 30)
+        public async Task<Dictionary<string, object>> GetRevenueChartDataAsync(int days = 30, int? sellerId = null)
         {
             var startDate = DateTime.Now.AddDays(-days);
 
+            // Build query with seller filtering
+            var query = _context.OrderTables
+                .Where(o => o.OrderDate >= startDate && o.Status == "Delivered");
+
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
             // Get daily revenue data (only from delivered orders)
-            var revenueData = await _context.OrderTables
-                .Where(o => o.OrderDate >= startDate && o.Status == "Delivered")
+            var revenueData = await query
                 .GroupBy(o => o.OrderDate!.Value.Date)
                 .Select(g => new {
                     Date = g.Key,
@@ -75,26 +83,40 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             };
         }
 
-        public async Task<List<OrderTable>> GetRecentSalesAsync(int count = 10, int days = 30)
+        public async Task<List<OrderTable>> GetRecentSalesAsync(int count = 10, int days = 30, int? sellerId = null)
         {
             var startDate = DateTime.Now.AddDays(-days);
 
-            return await _context.OrderTables
+            var query = _context.OrderTables
                 .Include(o => o.Buyer)
                 .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.Product)
-                .Where(o => o.OrderDate >= startDate)
+                .Where(o => o.OrderDate >= startDate);
+
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
+            return await query
                 .OrderByDescending(o => o.OrderDate)
                 .Take(count)
                 .ToListAsync();
         }
 
-        public async Task<Dictionary<string, int>> GetOrderStatisticsAsync(int days = 30)
+        public async Task<Dictionary<string, int>> GetOrderStatisticsAsync(int days = 30, int? sellerId = null)
         {
             var startDate = DateTime.Now.AddDays(-days);
-            var orders = await _context.OrderTables
-                .Where(o => o.OrderDate >= startDate)
-                .ToListAsync();
+
+            var query = _context.OrderTables
+                .Where(o => o.OrderDate >= startDate);
+
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
+            var orders = await query.ToListAsync();
 
             return new Dictionary<string, int>
             {
@@ -108,25 +130,37 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
             };
         }
 
-        public async Task<decimal> GetTotalRevenueAsync(int days = 30)
+        public async Task<decimal> GetTotalRevenueAsync(int days = 30, int? sellerId = null)
         {
             var startDate = DateTime.Now.AddDays(-days);
 
+            var query = _context.OrderTables
+                .Where(o => o.OrderDate >= startDate && o.Status == "Delivered");
+
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
             // Only count revenue from delivered orders
-            return await _context.OrderTables
-                .Where(o => o.OrderDate >= startDate && o.Status == "Delivered")
-                .SumAsync(o => o.TotalPrice ?? 0);
+            return await query.SumAsync(o => o.TotalPrice ?? 0);
         }
 
         // Helper method for growth calculation
-        private async Task<decimal> GetTotalRevenueAsync(int totalDays, int skipDays)
+        private async Task<decimal> GetTotalRevenueAsync(int totalDays, int skipDays, int? sellerId = null)
         {
             var endDate = DateTime.Now.AddDays(-skipDays);
             var startDate = endDate.AddDays(-totalDays);
 
-            return await _context.OrderTables
-                .Where(o => o.OrderDate >= startDate && o.OrderDate < endDate && o.Status == "Delivered")
-                .SumAsync(o => o.TotalPrice ?? 0);
+            var query = _context.OrderTables
+                .Where(o => o.OrderDate >= startDate && o.OrderDate < endDate && o.Status == "Delivered");
+
+            if (sellerId.HasValue)
+            {
+                query = query.Where(o => o.OrderItems.Any(oi => oi.Product != null && oi.Product.SellerId == sellerId.Value));
+            }
+
+            return await query.SumAsync(o => o.TotalPrice ?? 0);
         }
     }
 }

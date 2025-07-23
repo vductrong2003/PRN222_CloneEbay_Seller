@@ -6,170 +6,258 @@ namespace PRN222_CloneEbay_Seller.Controllers
     public class OrdersController : Controller
     {
         private readonly IOrderService _orderService;
+        private readonly IAccountService _accountService;
 
-        public OrdersController(IOrderService orderService)
+        public OrdersController(IOrderService orderService, IAccountService accountService)
         {
             _orderService = orderService;
+            _accountService = accountService;
+        }
+
+        private async Task<bool> CheckSellerAccessAsync()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return false;
+            
+            return await _accountService.CanAccessSellerFeaturesAsync(userId.Value);
+        }
+
+        private int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
         // GET: Orders
         public async Task<IActionResult> Index(string status = "all")
         {
-            var orders = status == "all"
-                ? await _orderService.GetAllOrdersAsync()
-                : await _orderService.GetOrdersByStatusAsync(status);
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                return RedirectToAction("Login", "Account");
+            }
 
-            var statistics = await _orderService.GetOrderStatisticsAsync();
-            var totalRevenue = await _orderService.GetTotalRevenueAsync();
+            if (!await CheckSellerAccessAsync())
+            {
+                TempData["Error"] = "You need to be an approved seller to access orders.";
+                return RedirectToAction("RequestSeller", "Account");
+            }
 
-            ViewBag.CurrentStatus = status;
-            ViewBag.Statistics = statistics;
-            ViewBag.TotalRevenue = totalRevenue;
+            try
+            {
+                var orders = status == "all"
+                    ? await _orderService.GetAllOrdersAsync(userId)
+                    : await _orderService.GetOrdersByStatusAsync(status, userId);
 
-            return View(orders);
+                var statistics = await _orderService.GetOrderStatisticsAsync(userId);
+                var totalRevenue = await _orderService.GetTotalRevenueAsync(userId);
+
+                ViewBag.CurrentStatus = status;
+                ViewBag.Statistics = statistics;
+                ViewBag.TotalRevenue = totalRevenue;
+
+                return View(orders);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading orders.";
+                return View(new List<PRN222_CloneEbay_Seller.Models.OrderTable>());
+            }
         }
 
         public async Task<IActionResult> Details(int id)
         {
-            var order = await _orderService.GetOrderDetailsAsync(id);
-            if (order == null)
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                return NotFound();
+                return RedirectToAction("Login", "Account");
             }
 
-            var buyerReviews = await _orderService.GetOrderProductReviewsByBuyerAsync(id);
-            ViewBag.BuyerReviews = buyerReviews;
+            if (!await CheckSellerAccessAsync())
+            {
+                TempData["Error"] = "You need to be an approved seller to access order details.";
+                return RedirectToAction("RequestSeller", "Account");
+            }
 
-            return View(order);
+            try
+            {
+                var order = await _orderService.GetOrderDetailsAsync(id, userId);
+                if (order == null)
+                {
+                    TempData["Error"] = "Order not found or you don't have permission to view it.";
+                    return RedirectToAction("Index");
+                }
+
+                var buyerReviews = await _orderService.GetOrderProductReviewsByBuyerAsync(id, userId);
+                ViewBag.BuyerReviews = buyerReviews;
+
+                return View(order);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading order details.";
+                return RedirectToAction("Index");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Ship(int orderId, string trackingNumber, string carrier)
         {
-            if (string.IsNullOrEmpty(trackingNumber) || string.IsNullOrEmpty(carrier))
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                TempData["Error"] = "Tracking number and carrier are required.";
-                return RedirectToAction(nameof(Details), new { id = orderId });
+                return Json(new { success = false, message = "Please log in to continue." });
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                return Json(new { success = false, message = "You need to be an approved seller to ship orders." });
             }
 
             try
             {
-                var result = await _orderService.ShipOrderAsync(orderId, trackingNumber, carrier);
+                if (string.IsNullOrWhiteSpace(trackingNumber) || string.IsNullOrWhiteSpace(carrier))
+                {
+                    return Json(new { success = false, message = "Tracking number and carrier are required." });
+                }
 
-                if (result)
+                var success = await _orderService.ShipOrderAsync(orderId, trackingNumber, carrier, userId);
+
+                if (success)
                 {
-                    TempData["Success"] = "Order has been marked as shipped successfully.";
+                    return Json(new { success = true, message = "Order shipped successfully!" });
                 }
-                else
-                {
-                    TempData["Error"] = "Failed to ship order. Please try again.";
-                }
+
+                return Json(new { success = false, message = "Failed to ship order or order not found." });
             }
             catch (InvalidOperationException ex)
             {
-                TempData["Error"] = ex.Message;
+                return Json(new { success = false, message = ex.Message });
             }
-            catch (Exception)
+            catch
             {
-                TempData["Error"] = "An unexpected error occurred while shipping the order.";
+                return Json(new { success = false, message = "An error occurred while shipping the order." });
             }
-
-            return RedirectToAction(nameof(Details), new { id = orderId });
         }
 
         [HttpPost]
         public async Task<IActionResult> Cancel(int orderId, string reason)
         {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                return Json(new { success = false, message = "Please log in to continue." });
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                return Json(new { success = false, message = "You need to be an approved seller to cancel orders." });
+            }
+
             try
             {
-                var result = await _orderService.CancelOrderAsync(orderId, reason ?? "Cancelled by seller");
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    return Json(new { success = false, message = "Cancellation reason is required." });
+                }
 
-                if (result)
+                var success = await _orderService.CancelOrderAsync(orderId, reason, userId);
+
+                if (success)
                 {
-                    TempData["Success"] = "Order has been cancelled successfully.";
+                    return Json(new { success = true, message = "Order cancelled successfully!" });
                 }
-                else
-                {
-                    TempData["Error"] = "Failed to cancel order. Order may not be eligible for cancellation.";
-                }
+
+                return Json(new { success = false, message = "Failed to cancel order or order not found." });
             }
             catch (InvalidOperationException ex)
             {
-                TempData["Error"] = ex.Message;
+                return Json(new { success = false, message = ex.Message });
             }
-            catch (Exception)
+            catch
             {
-                TempData["Error"] = "An unexpected error occurred while cancelling the order.";
+                return Json(new { success = false, message = "An error occurred while cancelling the order." });
             }
-
-            return RedirectToAction(nameof(Details), new { id = orderId });
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(int orderId, string status)
         {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                return Json(new { success = false, message = "Please log in to continue." });
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                return Json(new { success = false, message = "You need to be an approved seller to update order status." });
+            }
+
             try
             {
-                var result = await _orderService.UpdateOrderStatusAsync(orderId, status);
+                var success = await _orderService.UpdateOrderStatusAsync(orderId, status, userId);
 
-                if (result)
+                if (success)
                 {
-                    TempData["Success"] = $"Order status updated to '{status}' successfully.";
+                    return Json(new { success = true, message = "Order status updated successfully!" });
                 }
-                else
-                {
-                    TempData["Error"] = "Failed to update order status. Order not found.";
-                }
+
+                return Json(new { success = false, message = "Failed to update order status or order not found." });
             }
             catch (InvalidOperationException ex)
             {
-                TempData["Error"] = ex.Message;
+                return Json(new { success = false, message = ex.Message });
             }
-            catch (Exception)
+            catch
             {
-                TempData["Error"] = "An unexpected error occurred while updating order status.";
+                return Json(new { success = false, message = "An error occurred while updating order status." });
             }
-
-            return RedirectToAction(nameof(Details), new { id = orderId });
         }
 
         // POST: Orders/ProcessRefund
         [HttpPost]
-        public async Task<IActionResult> ProcessRefund(int orderId, decimal? amount = null, string reason = null)
+        public async Task<IActionResult> ProcessRefund(int orderId, decimal? amount = null, string? reason = null)
         {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                return Json(new { success = false, message = "Please log in to continue." });
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                return Json(new { success = false, message = "You need to be an approved seller to process refunds." });
+            }
+
             try
             {
-                var order = await _orderService.GetOrderDetailsAsync(orderId);
+                // Get order details to determine refund amount if not provided
+                var order = await _orderService.GetOrderDetailsAsync(orderId, userId);
                 if (order == null)
                 {
-                    TempData["Error"] = "Order not found.";
-                    return RedirectToAction(nameof(Details), new { id = orderId });
+                    return Json(new { success = false, message = "Order not found or you don't have permission to access it." });
                 }
 
-                // If no amount specified, refund full amount
-                decimal refundAmount = amount ?? order.TotalPrice ?? 0;
+                var refundAmount = amount ?? order.TotalPrice ?? 0;
+                var refundReason = reason ?? "Seller initiated refund";
 
-                var result = await _orderService.ProcessRefundAsync(orderId, refundAmount, reason ?? "Refund processed by seller");
+                var success = await _orderService.ProcessRefundAsync(orderId, refundAmount, refundReason, userId);
 
-                if (result)
+                if (success)
                 {
-                    TempData["Success"] = $"Refund of ${refundAmount:N2} has been processed successfully.";
+                    return Json(new { success = true, message = $"Refund of ${refundAmount:F2} processed successfully!" });
                 }
-                else
-                {
-                    TempData["Error"] = "Failed to process refund. Please try again.";
-                }
+
+                return Json(new { success = false, message = "Failed to process refund." });
             }
             catch (InvalidOperationException ex)
             {
-                TempData["Error"] = ex.Message;
+                return Json(new { success = false, message = ex.Message });
             }
-            catch (Exception)
+            catch
             {
-                TempData["Error"] = "An unexpected error occurred while processing refund.";
+                return Json(new { success = false, message = "An error occurred while processing the refund." });
             }
-
-            return RedirectToAction(nameof(Details), new { id = orderId });
         }
     }
 }

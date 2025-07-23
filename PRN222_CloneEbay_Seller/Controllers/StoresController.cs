@@ -7,47 +7,110 @@ namespace PRN222_CloneEbay_Seller.Controllers
     public class StoresController : Controller
     {
         private readonly IStoreService _storeService;
+        private readonly IAccountService _accountService;
 
-        public StoresController(IStoreService storeService)
+        public StoresController(IStoreService storeService, IAccountService accountService)
         {
             _storeService = storeService;
+            _accountService = accountService;
+        }
+
+        private async Task<bool> CheckSellerAccessAsync()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue) return false;
+            
+            return await _accountService.CanAccessSellerFeaturesAsync(userId.Value);
+        }
+
+        private int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("UserId") ?? 0;
         }
 
         // GET: Store - Display all stores for current seller
         public async Task<IActionResult> Index()
         {
-            // For demo purposes, using seller ID = 1. In real app, get from authentication
-            int currentSellerId = 1;
-            
-            var stores = await _storeService.GetStoresBySellerIdAsync(currentSellerId);
-            ViewBag.CurrentSellerId = currentSellerId;
-            
-            return View(stores);
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                TempData["Error"] = "You need to be an approved seller to access stores.";
+                return RedirectToAction("RequestSeller", "Account");
+            }
+
+            try
+            {
+                var stores = await _storeService.GetStoresBySellerIdAsync(userId);
+                ViewBag.CurrentSellerId = userId;
+                
+                return View(stores);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading your stores.";
+                return View(new List<Store>());
+            }
         }
 
         // GET: Store/Details/5
         public async Task<IActionResult> Details(int id)
         {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            var store = await _storeService.GetStoreByIdAsync(id);
-            if (store == null || store.SellerId != currentSellerId)
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                return NotFound();
+                return RedirectToAction("Login", "Account");
             }
 
-            var statistics = await _storeService.GetStoreStatisticsAsync(id);
-            var products = await _storeService.GetStoreProductsAsync(id);
-            
-            ViewBag.Statistics = statistics;
-            ViewBag.Products = products;
-            
-            return View(store);
+            if (!await CheckSellerAccessAsync())
+            {
+                TempData["Error"] = "You need to be an approved seller to access store details.";
+                return RedirectToAction("RequestSeller", "Account");
+            }
+
+            try
+            {
+                var store = await _storeService.GetStoreByIdAsync(id);
+                if (store == null || store.SellerId != userId)
+                {
+                    TempData["Error"] = "Store not found or you don't have permission to view it.";
+                    return RedirectToAction("Index");
+                }
+
+                var statistics = await _storeService.GetStoreStatisticsAsync(id);
+                var products = await _storeService.GetStoreProductsAsync(id);
+                
+                ViewBag.Statistics = statistics;
+                ViewBag.Products = products;
+                
+                return View(store);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading store details.";
+                return RedirectToAction("Index");
+            }
         }
 
         // GET: Store/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            var userId = GetCurrentUserId();
+            if (userId == 0)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                TempData["Error"] = "You need to be an approved seller to create stores.";
+                return RedirectToAction("RequestSeller", "Account");
+            }
+
             return View();
         }
 
@@ -55,31 +118,48 @@ namespace PRN222_CloneEbay_Seller.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Store store)
         {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            if (!ModelState.IsValid)
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                return View(store);
+                return RedirectToAction("Login", "Account");
             }
 
-            // Check if store name is unique
-            if (!await _storeService.IsStoreNameUniqueAsync(store.StoreName!))
+            if (!await CheckSellerAccessAsync())
             {
-                ModelState.AddModelError("StoreName", "Store name already exists. Please choose a different name.");
-                return View(store);
+                TempData["Error"] = "You need to be an approved seller to create stores.";
+                return RedirectToAction("RequestSeller", "Account");
             }
 
-            store.SellerId = currentSellerId;
-            
             try
             {
-                await _storeService.CreateStoreAsync(store);
-                TempData["Success"] = "Store created successfully!";
-                return RedirectToAction(nameof(Index));
+                if (!ModelState.IsValid)
+                {
+                    return View(store);
+                }
+
+                // Check if store name is unique
+                var isUnique = await _storeService.IsStoreNameUniqueAsync(store.StoreName);
+                if (!isUnique)
+                {
+                    ModelState.AddModelError("StoreName", "This store name is already taken");
+                    return View(store);
+                }
+
+                store.SellerId = userId; // Set the current user as seller
+                var createdStore = await _storeService.CreateStoreAsync(store);
+
+                if (createdStore != null)
+                {
+                    TempData["Success"] = "Store created successfully!";
+                    return RedirectToAction("Details", new { id = createdStore.Id });
+                }
+
+                TempData["Error"] = "Failed to create store. Please try again.";
+                return View(store);
             }
-            catch (Exception ex)
+            catch
             {
-                TempData["Error"] = $"Failed to create store: {ex.Message}";
+                TempData["Error"] = "An error occurred while creating the store.";
                 return View(store);
             }
         }
@@ -87,228 +167,169 @@ namespace PRN222_CloneEbay_Seller.Controllers
         // GET: Store/Edit/5
         public async Task<IActionResult> Edit(int id)
         {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            var store = await _storeService.GetStoreByIdAsync(id);
-            if (store == null || store.SellerId != currentSellerId)
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                return NotFound();
+                return RedirectToAction("Login", "Account");
             }
 
-            return View(store);
+            if (!await CheckSellerAccessAsync())
+            {
+                TempData["Error"] = "You need to be an approved seller to edit stores.";
+                return RedirectToAction("RequestSeller", "Account");
+            }
+
+            try
+            {
+                var store = await _storeService.GetStoreByIdAsync(id);
+                if (store == null || store.SellerId != userId)
+                {
+                    TempData["Error"] = "Store not found or you don't have permission to edit it.";
+                    return RedirectToAction("Index");
+                }
+
+                return View(store);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading the store for editing.";
+                return RedirectToAction("Index");
+            }
         }
 
         // POST: Store/Edit/5
         [HttpPost]
         public async Task<IActionResult> Edit(int id, Store store, IFormFile? bannerFile)
         {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            if (!ModelState.IsValid)
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                return View(store);
+                return RedirectToAction("Login", "Account");
             }
 
-            // Verify ownership
-            if (!await _storeService.IsStoreOwnerAsync(id, currentSellerId))
+            if (!await CheckSellerAccessAsync())
             {
-                return NotFound();
-            }
-
-            // Check if store name is unique (excluding current store)
-            if (!await _storeService.IsStoreNameUniqueAsync(store.StoreName!, id))
-            {
-                ModelState.AddModelError("StoreName", "Store name already exists. Please choose a different name.");
-                return View(store);
-            }
-
-            // Handle banner upload if provided
-            if (bannerFile != null && bannerFile.Length > 0)
-            {
-                try
-                {
-                    var bannerUrl = await SaveBannerImageAsync(bannerFile, currentSellerId);
-                    store.BannerImageUrl = bannerUrl;
-                }
-                catch (ArgumentException ex)
-                {
-                    ModelState.AddModelError("", ex.Message);
-                    return View(store);
-                }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", $"Failed to upload banner: {ex.Message}");
-                    return View(store);
-                }
+                TempData["Error"] = "You need to be an approved seller to edit stores.";
+                return RedirectToAction("RequestSeller", "Account");
             }
 
             try
             {
-                var result = await _storeService.UpdateStoreAsync(id, store);
-                if (result)
+                var existingStore = await _storeService.GetStoreByIdAsync(id);
+                if (existingStore == null || existingStore.SellerId != userId)
                 {
-                    TempData["Success"] = "Store updated successfully!";
-                    return RedirectToAction(nameof(Index));
+                    TempData["Error"] = "Store not found or you don't have permission to edit it.";
+                    return RedirectToAction("Index");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return View(store);
+                }
+
+                // Check if store name is unique (excluding current store)
+                var isUnique = await _storeService.IsStoreNameUniqueAsync(store.StoreName, id);
+                if (!isUnique)
+                {
+                    ModelState.AddModelError("StoreName", "This store name is already taken");
+                    return View(store);
+                }
+
+                // Handle banner file upload if provided
+                if (bannerFile != null && bannerFile.Length > 0)
+                {
+                    // Validate file type
+                    var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif" };
+                    if (!allowedTypes.Contains(bannerFile.ContentType.ToLower()))
+                    {
+                        ModelState.AddModelError("BannerFile", "Only image files (JPEG, PNG, GIF) are allowed");
+                        return View(store);
+                    }
+
+                    // Validate file size (max 5MB)
+                    if (bannerFile.Length > 5 * 1024 * 1024)
+                    {
+                        ModelState.AddModelError("BannerFile", "File size cannot exceed 5MB");
+                        return View(store);
+                    }
+
+                    // Save the uploaded file
+                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "banners");
+                    if (!Directory.Exists(uploadsPath))
+                    {
+                        Directory.CreateDirectory(uploadsPath);
+                    }
+
+                    var fileName = $"{Guid.NewGuid()}_{bannerFile.FileName}";
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await bannerFile.CopyToAsync(stream);
+                    }
+
+                    store.BannerImageUrl = $"/uploads/banners/{fileName}";
                 }
                 else
                 {
-                    TempData["Error"] = "Store not found.";
-                    return View(store);
+                    // Keep existing banner if no new file uploaded
+                    store.BannerImageUrl = existingStore.BannerImageUrl;
                 }
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = $"Failed to update store: {ex.Message}";
+
+                store.SellerId = userId; // Ensure seller ID is correct
+                var success = await _storeService.UpdateStoreAsync(id, store);
+
+                if (success)
+                {
+                    TempData["Success"] = "Store updated successfully!";
+                    return RedirectToAction("Details", new { id = id });
+                }
+
+                TempData["Error"] = "Failed to update store. Please try again.";
                 return View(store);
             }
-        }
-
-        // Helper method to save banner image
-        private async Task<string> SaveBannerImageAsync(IFormFile bannerFile, int sellerId)
-        {
-            // Validate file
-            if (bannerFile == null || bannerFile.Length == 0)
-                throw new ArgumentException("No file provided");
-
-            // Check file size (max 2MB)
-            if (bannerFile.Length > 2 * 1024 * 1024)
-                throw new ArgumentException("File size must be less than 2MB");
-
-            // Check file type
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
-            var fileExtension = Path.GetExtension(bannerFile.FileName).ToLowerInvariant();
-            if (!allowedExtensions.Contains(fileExtension))
-                throw new ArgumentException("Only image files (JPG, PNG, GIF, WebP) are allowed");
-
-            // Create directory structure: wwwroot/images/store/{sellerId}/banner/
-            var uploadsFolder = Path.Combine("wwwroot", "images", "store", sellerId.ToString(), "banner");
-            var fullUploadsPath = Path.Combine(Directory.GetCurrentDirectory(), uploadsFolder);
-            
-            if (!Directory.Exists(fullUploadsPath))
+            catch
             {
-                Directory.CreateDirectory(fullUploadsPath);
+                TempData["Error"] = "An error occurred while updating the store.";
+                return View(store);
             }
-
-            // Generate unique filename
-            var fileName = $"banner_{DateTime.Now:yyyyMMdd_HHmmss}{fileExtension}";
-            var filePath = Path.Combine(fullUploadsPath, fileName);
-
-            // Save file
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await bannerFile.CopyToAsync(stream);
-            }
-
-            // Return relative URL for web access
-            return $"/images/store/{sellerId}/banner/{fileName}";
         }
 
         // POST: Store/Delete/5
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            // Verify ownership
-            if (!await _storeService.IsStoreOwnerAsync(id, currentSellerId))
+            var userId = GetCurrentUserId();
+            if (userId == 0)
             {
-                return Json(new { success = false, message = "Store not found or access denied." });
+                return Json(new { success = false, message = "Please log in to continue." });
+            }
+
+            if (!await CheckSellerAccessAsync())
+            {
+                return Json(new { success = false, message = "You need to be an approved seller to delete stores." });
             }
 
             try
             {
-                var result = await _storeService.DeleteStoreAsync(id);
-                if (result)
+                var store = await _storeService.GetStoreByIdAsync(id);
+                if (store == null || store.SellerId != userId)
+                {
+                    return Json(new { success = false, message = "Store not found or you don't have permission to delete it." });
+                }
+
+                var success = await _storeService.DeleteStoreAsync(id);
+
+                if (success)
                 {
                     return Json(new { success = true, message = "Store deleted successfully!" });
                 }
-                else
-                {
-                    return Json(new { success = false, message = "Store not found." });
-                }
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Json(new { success = false, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Failed to delete store: {ex.Message}" });
-            }
-        }
 
-        // GET: Store/Settings/5
-        public async Task<IActionResult> Settings(int id)
-        {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            var store = await _storeService.GetStoreByIdAsync(id);
-            if (store == null || store.SellerId != currentSellerId)
-            {
-                return NotFound();
+                return Json(new { success = false, message = "Failed to delete store." });
             }
-
-            return View(store);
-        }
-
-        // POST: Store/Settings/5
-        [HttpPost]
-        public async Task<IActionResult> Settings(int id, Store store)
-        {
-            int currentSellerId = 1; // Get from authentication in real app
-            
-            if (!ModelState.IsValid)
+            catch
             {
-                return View(store);
-            }
-
-            // Verify ownership
-            if (!await _storeService.IsStoreOwnerAsync(id, currentSellerId))
-            {
-                return NotFound();
-            }
-
-            try
-            {
-                var result = await _storeService.UpdateStoreAsync(id, store);
-                if (result)
-                {
-                    TempData["Success"] = "Store settings updated successfully!";
-                    return RedirectToAction(nameof(Details), new { id });
-                }
-                else
-                {
-                    TempData["Error"] = "Store not found.";
-                    return View(store);
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = $"Failed to update store settings: {ex.Message}";
-                return View(store);
-            }
-        }
-
-        // GET: Store/GetStatistics/5 - API endpoint for store statistics
-        [HttpGet]
-        public async Task<IActionResult> GetStatistics(int id)
-        {
-            try
-            {
-                int currentSellerId = 1; // Get from authentication in real app
-                
-                // Verify ownership
-                if (!await _storeService.IsStoreOwnerAsync(id, currentSellerId))
-                {
-                    return Json(new { error = "Access denied" });
-                }
-
-                var statistics = await _storeService.GetStoreStatisticsAsync(id);
-                return Json(statistics);
-            }
-            catch (Exception ex)
-            {
-                return Json(new { error = ex.Message });
+                return Json(new { success = false, message = "An error occurred while deleting the store." });
             }
         }
     }

@@ -1,151 +1,273 @@
-﻿//using Microsoft.AspNetCore.Mvc;
-//using Microsoft.EntityFrameworkCore;
-//using PRN222_CloneEbay_Seller.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using PRN222_CloneEbay_Seller.Models;
+using PRN222_CloneEbay_Seller.Services.Interfaces;
 
-//namespace PRN222_CloneEbay_Seller.Controllers
-//{
-//    public class AccountController : Controller
-//    {
-//        private readonly IUserService _UserService;
-//        private readonly IWebHostEnvironment _environment;
+namespace PRN222_CloneEbay_Seller.Controllers
+{
+    public class AccountController : Controller
+    {
+        private readonly IAccountService _accountService;
 
-//        public AccountController(IUserService UserService, IWebHostEnvironment environment)
-//        {
-//            _UserService = UserService;
-//            _environment = environment;
-//        }
+        public AccountController(IAccountService accountService)
+        {
+            _accountService = accountService;
+        }
 
-//        [HttpGet]
-//        public IActionResult Register()
-//        {
-//            return View(new User());
-//        }
+        // GET: Account/Login
+        [HttpGet]
+        public IActionResult Login()
+        {
+            // Redirect if already logged in
+            if (HttpContext.Session.GetInt32("UserId").HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
 
-//        [HttpPost]
-//        [ValidateAntiForgeryToken]
-//        public async Task<IActionResult> Register(User model, IFormFile? AvatarFile, string ConfirmPassword, bool AgreeToTerms)
-//        {
-//            // Custom validation
-//            if (!AgreeToTerms)
-//            {
-//                ModelState.AddModelError("", "You must agree to the terms and conditions");
-//            }
+            return View(new LoginViewModel());
+        }
 
-//            if (string.IsNullOrEmpty(ConfirmPassword) || model.Password != ConfirmPassword)
-//            {
-//                ModelState.AddModelError("", "Passwords do not match");
-//            }
+        // POST: Account/Login
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
 
-//            // Check if email exists
-//            if (await _UserService.IsEmailExistsAsync(model.email))
-//            {
-//                ModelState.AddModelError("email", "This email is already registered");
-//            }
+                var user = await _accountService.ValidateUserAsync(model.EmailOrUsername, model.Password);
 
-//            // Check if Username exists
-//            if (await _UserService.IsUsernameExistsAsync(model.Username))
-//            {
-//                ModelState.AddModelError("Username", "This Username is already taken");
-//            }
+                if (user != null)
+                {
+                    // Set session data
+                    HttpContext.Session.SetInt32("UserId", user.Id);
+                    HttpContext.Session.SetString("Username", user.Username ?? "");
+                    HttpContext.Session.SetString("Email", user.Email ?? "");
+                    HttpContext.Session.SetString("Role", user.Role ?? "Seller");
+                    HttpContext.Session.SetString("Status", user.Status ?? "Active");
 
-//            if (!ModelState.IsValid)
-//            {
-//                return View(model);
-//            }
+                    TempData["Success"] = "Login successful!";
+                    return RedirectToAction("Index", "Home");
+                }
 
-//            // Hash Password
-//            model.Password = BCrypt.Net.BCrypt.HashPassword(model.Password);
+                ModelState.AddModelError("", "Invalid email/username or password");
+                return View(model);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred during login. Please try again.";
+                return View(model);
+            }
+        }
 
-//            // Handle avatar upload
-//            if (AvatarFile != null && AvatarFile.Length > 0)
-//            {
-//                model.avatarURL = await SaveAvatarAsync(AvatarFile);
-//            }
+        // GET: Account/Register
+        [HttpGet]
+        public IActionResult Register()
+        {
+            // Redirect if already logged in
+            if (HttpContext.Session.GetInt32("UserId").HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
 
-//            // Save User
-//            _context.Users.Add(model);
-//            await _context.SaveChangesAsync();
+            return View(new RegisterViewModel());
+        }
 
-//            // Set session
-//            HttpContext.Session.SetInt32("UserId", model.id);
-//            HttpContext.Session.SetString("Username", model.Username);
-//            HttpContext.Session.SetString("Role", model.role);
+        // POST: Account/Register
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
 
-//            TempData["SuccessMessage"] = "Account created successfully!";
-//            return RedirectToAction("Overview", "Seller");
-//        }
+                if (await _accountService.IsEmailExistsAsync(model.Email))
+                {
+                    ModelState.AddModelError("Email", "This email is already registered");
+                    return View(model);
+                }
 
-//        [HttpGet]
-//        public IActionResult Login()
-//        {
-//            return View(new LoginModel());
-//        }
+                if (await _accountService.IsUsernameExistsAsync(model.Username))
+                {
+                    ModelState.AddModelError("Username", "This username is already taken");
+                    return View(model);
+                }
 
-//        [HttpPost]
-//        [ValidateAntiForgeryToken]
-//        public async Task<IActionResult> Login(LoginModel model)
-//        {
-//            if (!ModelState.IsValid)
-//            {
-//                return View(model);
-//            }
+                var generatedPassword = await _accountService.GeneratePasswordAsync();
 
-//            var User = await _UserService.ValidateUserAsync(model.EmailOrUsername, model.Password);
+                var user = new User
+                {
+                    Username = model.Username,
+                    Email = model.Email,
+                    Password = generatedPassword, 
+                    Role = "Seller", // Tự động trở thành seller
+                    Status = "Active"
+                };
 
-//            if (User != null)
-//            {
-//                // Set session
-//                HttpContext.Session.SetInt32("UserId", User.id);
-//                HttpContext.Session.SetString("Username", User.Username);
-//                HttpContext.Session.SetString("Email", User.email);
-//                HttpContext.Session.SetString("Role", User.role);
-//                HttpContext.Session.SetString("AvatarURL", User.avatarURL ?? "");
+                var success = await _accountService.RegisterUserAsync(user);
 
-//                // Set remember me cookie
-//                if (model.RememberMe)
-//                {
-//                    var cookieOptions = new CookieOptions
-//                    {
-//                        Expires = DateTime.Now.AddDays(30),
-//                        HttpOnly = true,
-//                        Secure = true
-//                    };
-//                    Response.Cookies.Append("RememberMe", User.id.ToString(), cookieOptions);
-//                }
+                if (success)
+                {
+                    var emailSent = await _accountService.SendPasswordEmailAsync(
+                        model.Email, 
+                        generatedPassword, 
+                        $"{model.FirstName} {model.LastName}"
+                    );
 
-//                TempData["SuccessMessage"] = $"Welcome back, {User.Username}!";
-//                return RedirectToAction("Overview", "Seller");
-//            }
+                    if (emailSent)
+                    {
+                        TempData["Success"] = "Seller account created successfully! Your login credentials have been sent to your email.";
+                    }
+                    else
+                    {
+                        TempData["Warning"] = "Seller account created successfully! However, we couldn't send the email. Please contact support for your login credentials.";
+                    }
 
-//            ModelState.AddModelError("", "Invalid email/Username or Password");
-//            return View(model);
-//        }
+                    return RedirectToAction("Login");
+                }
 
-//        [HttpPost]
-//        public IActionResult Logout()
-//        {
-//            HttpContext.Session.Clear();
-//            Response.Cookies.Delete("RememberMe");
-//            TempData["InfoMessage"] = "You have been logged out successfully";
-//            return RedirectToAction("Login");
-//        }
+                TempData["Error"] = "Failed to create account. Please try again.";
+                return View(model);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred during registration. Please try again.";
+                return View(model);
+            }
+        }
 
-//        private async Task<string> SaveAvatarAsync(IFormFile avatar)
-//        {
-//            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "avatars");
+        // GET: Account/ForgotPassword
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View(new ForgotPasswordViewModel());
+        }
 
-//            if (!Directory.Exists(uploadsFolder))
-//                Directory.CreateDirectory(uploadsFolder);
+        // POST: Account/ForgotPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
 
-//            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(avatar.FileName)}";
-//            var filePath = Path.Combine(uploadsFolder, fileName);
+                var success = await _accountService.ResetPasswordAsync(model.Email);
 
-//            using (var stream = new FileStream(filePath, FileMode.Create))
-//            {
-//                await avatar.CopyToAsync(stream);
-//            }
+                if (success)
+                {
+                    TempData["Success"] = "A new password has been sent to your email address.";
+                }
+                else
+                {
+                    TempData["Error"] = "Email address not found or failed to send email.";
+                }
 
-//            return $"/uploads/avatars/{fileName}";
-//        }
-//    }
-//}
+                return RedirectToAction("Login");
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while resetting password. Please try again.";
+                return View(model);
+            }
+        }
+
+        // GET: Account/ChangePassword
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View(new ChangePasswordViewModel());
+        }
+
+        // POST: Account/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            try
+            {
+                var userId = HttpContext.Session.GetInt32("UserId");
+                if (!userId.HasValue)
+                {
+                    return RedirectToAction("Login");
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return View(model);
+                }
+
+                var success = await _accountService.ChangePasswordAsync(userId.Value, model.CurrentPassword, model.NewPassword);
+
+                if (success)
+                {
+                    TempData["Success"] = "Password changed successfully!";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                ModelState.AddModelError("CurrentPassword", "Current password is incorrect");
+                return View(model);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while changing password. Please try again.";
+                return View(model);
+            }
+        }
+
+        // POST: Account/Logout
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            Response.Cookies.Delete("RememberMe");
+            TempData["Info"] = "You have been logged out successfully";
+            return RedirectToAction("Login");
+        }
+
+        // GET: Account/Profile
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login");
+            }
+
+            try
+            {
+                var user = await _accountService.GetUserByIdAsync(userId.Value);
+                if (user == null)
+                {
+                    TempData["Error"] = "User not found.";
+                    return RedirectToAction("Login");
+                }
+
+                return View(user);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading profile.";
+                return RedirectToAction("Index", "Home");
+            }
+        }
+    }
+}

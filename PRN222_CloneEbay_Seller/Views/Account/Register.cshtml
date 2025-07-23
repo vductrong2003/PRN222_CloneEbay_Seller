@@ -1,249 +1,149 @@
-﻿@model User
+﻿@model PRN222_CloneEbay_Seller.Models.RegisterViewModel
 @{
-    ViewData["Title"] = "Create your account";
+    ViewData["Title"] = "Create eBay Seller Account";
     Layout = "~/Views/Shared/_AccountLayout.cshtml";
 }
 
-<div class="ebay-signup-container">
-    <div class="signup-header">
-        <div class="ebay-logo">
-            <img src="~/images/ebay-logo.svg" alt="eBay" />
+<div class="auth-container">
+    <div class="auth-card register-card">
+        <div class="auth-header">
+            <h1 class="auth-title">
+                <i class="fas fa-store"></i>
+                Create Seller Account
+            </h1>
+            <p class="auth-subtitle">Start selling on eBay and grow your business</p>
         </div>
-        <h1>Create your account</h1>
-        <p class="signup-subtitle">Enter your details below</p>
-    </div>
 
-    <div class="signup-form-container">
-        <form asp-action="Register" method="post" class="ebay-form" enctype="multipart/form-data" novalidate>
-            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
-
-            <!-- Username -->
-            <div class="form-group">
-                <label asp-for="Username" class="form-label required">Username</label>
-                <input asp-for="Username"
-                       class="form-control"
-                       placeholder="Enter your username"
-                       autocomplete="username" />
-                <span asp-validation-for="Username" class="field-validation-error"></span>
-                <small class="form-text">This will be your unique identifier</small>
+        <div class="registration-benefits">
+            <div class="benefit-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Track your performance</span>
             </div>
-
-            <!-- Email -->
-            <div class="form-group">
-                <label asp-for="Email" class="form-label required">Email</label>
-                <input asp-for="Email"
-                       class="form-control"
-                       type="email"
-                       placeholder="Enter your email"
-                       autocomplete="email" />
-                <span asp-validation-for="Email" class="field-validation-error"></span>
+            <div class="benefit-item">
+                <i class="fas fa-shipping-fast"></i>
+                <span>Manage orders & shipping</span>
             </div>
+            <div class="benefit-item">
+                <i class="fas fa-dollar-sign"></i>
+                <span>Optimize your listings</span>
+            </div>
+        </div>
 
-            <!-- Password -->
-            <div class="form-group">
-                <label asp-for="Password" class="form-label required">Password</label>
-                <div class="password-container">
-                    <input asp-for="Password"
-                           class="form-control"
-                           type="password"
-                           placeholder="Create a password"
-                           autocomplete="new-password" />
-                    <button type="button" class="password-toggle" onclick="togglePassword('password')">
-                        <i class="far fa-eye" id="password-eye"></i>
-                    </button>
+        <form asp-action="Register" method="post" class="auth-form">
+            @Html.AntiForgeryToken()
+            
+            <div class="form-row">
+                <div class="form-group half-width">
+                    <label asp-for="FirstName" class="form-label">
+                        <i class="fas fa-user"></i>
+                        First Name
+                    </label>
+                    <input asp-for="FirstName" class="form-control" placeholder="Enter your first name" autocomplete="given-name" autofocus />
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
                 </div>
-                <div class="password-requirements">
-                    <ul>
-                        <li id="length-req">At least 8 characters</li>
-                        <li id="case-req">One uppercase and one lowercase letter</li>
-                        <li id="number-req">At least one number</li>
-                    </ul>
+
+                <div class="form-group half-width">
+                    <label asp-for="LastName" class="form-label">
+                        <i class="fas fa-user"></i>
+                        Last Name
+                    </label>
+                    <input asp-for="LastName" class="form-control" placeholder="Enter your last name" autocomplete="family-name" />
+                    <span asp-validation-for="LastName" class="text-danger"></span>
                 </div>
-                <span asp-validation-for="Password" class="field-validation-error"></span>
             </div>
 
-            <!-- Confirm Password (additional field not in model) -->
             <div class="form-group">
-                <label for="ConfirmPassword" class="form-label required">Confirm password</label>
-                <div class="password-container">
-                    <input name="ConfirmPassword"
-                           id="ConfirmPassword"
-                           class="form-control"
-                           type="password"
-                           placeholder="Confirm your password"
-                           autocomplete="new-password" />
-                    <button type="button" class="password-toggle" onclick="togglePassword('ConfirmPassword')">
-                        <i class="far fa-eye" id="ConfirmPassword-eye"></i>
-                    </button>
-                </div>
-                <span class="field-validation-error" data-valmsg-for="ConfirmPassword"></span>
-            </div>
-
-            <!-- Role Selection -->
-            <div class="form-group">
-                <label asp-for="Role" class="form-label required">Account Type</label>
-                <select asp-for="Role" class="form-control">
-                    <option value="Seller">Seller Account</option>
-                    <option value="Buyer">Buyer Account</option>
-                    <option value="Both">Both Seller & Buyer</option>
-                </select>
-                <span asp-validation-for="Role" class="field-validation-error"></span>
-                <small class="form-text">You can change this later in your account settings</small>
-            </div>
-
-            <!-- Avatar Upload -->
-            <div class="form-group">
-                <label for="AvatarFile" class="form-label">Profile Picture</label>
-                <div class="avatar-upload-container">
-                    <div class="avatar-preview">
-                        <img id="avatarPreview" src="~/images/default-avatar.png" alt="Avatar Preview" />
-                    </div>
-                    <div class="avatar-upload">
-                        <input type="file"
-                               name="AvatarFile"
-                               id="AvatarFile"
-                               accept="image/*"
-                               onchange="previewAvatar(this)" />
-                        <label for="AvatarFile" class="avatar-upload-btn">
-                            <i class="fas fa-camera"></i>
-                            Choose Photo
-                        </label>
-                    </div>
-                </div>
-                <small class="form-text">Optional: JPG, PNG, GIF up to 5MB</small>
-            </div>
-
-            <!-- Terms and Conditions -->
-            <div class="form-group checkbox-group">
-                <label class="checkbox-container">
-                    <input name="AgreeToTerms" type="checkbox" required />
-                    <span class="checkmark"></span>
-                    <span class="checkbox-text">
-                        By Creating an account, you agree to our
-                        <a href="#" class="link">User Agreement</a> and acknowledge reading our
-                        <a href="#" class="link">User Privacy Notice</a>.
-                    </span>
+                <label asp-for="Username" class="form-label">
+                    <i class="fas fa-at"></i>
+                    Username
                 </label>
-                <span class="field-validation-error" data-valmsg-for="AgreeToTerms"></span>
+                <input asp-for="Username" class="form-control" placeholder="Choose a unique username" autocomplete="username" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+                <small class="form-text">This will be your unique identifier on eBay</small>
             </div>
 
-            <!-- Marketing Emails -->
-            <div class="form-group checkbox-group">
-                <label class="checkbox-container">
-                    <input name="AcceptMarketing" type="checkbox" checked />
-                    <span class="checkmark"></span>
-                    <span class="checkbox-text">
-                        Please send me emails about eBay and deals
-                    </span>
+            <div class="form-group">
+                <label asp-for="Email" class="form-label">
+                    <i class="fas fa-envelope"></i>
+                    Email Address
                 </label>
+                <input asp-for="Email" class="form-control" placeholder="Enter your email address" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+                <small class="form-text">We'll send your login credentials to this email</small>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary btn-create-account">
-                Create account
+            <div class="form-group">
+                <label asp-for="PhoneNumber" class="form-label">
+                    <i class="fas fa-phone"></i>
+                    Phone Number (Optional)
+                </label>
+                <input asp-for="PhoneNumber" class="form-control" placeholder="Enter your phone number" autocomplete="tel" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+
+            <div class="password-info-box">
+                <h4><i class="fas fa-key"></i> Password Information</h4>
+                <p>For security, we'll generate a secure password and send it to your email. You can change it after logging in.</p>
+                <ul>
+                    <li><i class="fas fa-check"></i> 8 characters long</li>
+                    <li><i class="fas fa-check"></i> Contains uppercase & lowercase letters</li>
+                    <li><i class="fas fa-check"></i> Contains numbers</li>
+                    <li><i class="fas fa-check"></i> Secure & randomly generated</li>
+                </ul>
+            </div>
+
+            
+
+            <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+
+            <button type="submit" class="btn btn-primary btn-register">
+                <i class="fas fa-user-plus"></i>
+                Create Account
             </button>
         </form>
 
-        <!-- Sign In Link -->
-        <div class="signin-link-container">
-            <p>
-                Already have an account?
-                <a asp-action="Login" class="link">Sign in</a>
-            </p>
-        </div>
-    </div>
-
-    <!-- Alternative Sign Up Methods -->
-    <div class="alternative-signup">
-        <div class="divider">
-            <span>or</span>
+        <div class="auth-footer">
+            <a asp-action="Login" class="btn btn-outline-primary btn-login-link">
+                <i class="fas fa-sign-in-alt"></i>
+                Sign In
+            </a>
         </div>
 
-        <button type="button" class="btn btn-google">
-            <img src="~/images/google-icon.svg" alt="Google" />
-            Continue with Google
-        </button>
-
-        <button type="button" class="btn btn-facebook">
-            <img src="~/images/facebook-icon.svg" alt="Facebook" />
-            Continue with Facebook
-        </button>
-
-        <button type="button" class="btn btn-apple">
-            <img src="~/images/apple-icon.svg" alt="Apple" />
-            Continue with Apple
-        </button>
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Password strength validation
-        const passwordInput = document.getElementById('password');
-        const lengthReq = document.getElementById('length-req');
-        const caseReq = document.getElementById('case-req');
-        const numberReq = document.getElementById('number-req');
-
-        passwordInput.addEventListener('input', function() {
-            const password = this.value;
-
-            // Length requirement
-            if (password.length >= 8) {
-                lengthReq.classList.add('valid');
-            } else {
-                lengthReq.classList.remove('valid');
-            }
-
-            // Case requirement
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) {
-                caseReq.classList.add('valid');
-            } else {
-                caseReq.classList.remove('valid');
-            }
-
-            // Number requirement
-            if (/\d/.test(password)) {
-                numberReq.classList.add('valid');
-            } else {
-                numberReq.classList.remove('valid');
-            }
-        });
-
-        // Confirm password validation
-        const confirmPasswordInput = document.getElementById('ConfirmPassword');
-        confirmPasswordInput.addEventListener('input', function() {
-            if (this.value !== passwordInput.value) {
+@section Scripts {
+    <script>
+        // Real-time username validation
+        document.getElementById('Username').addEventListener('input', function() {
+            const username = this.value;
+            const regex = /^[a-zA-Z0-9_]+$/;
+            
+            if (username && !regex.test(username)) {
                 this.classList.add('is-invalid');
-                this.nextElementSibling.nextElementSibling.textContent = 'Passwords do not match';
             } else {
                 this.classList.remove('is-invalid');
-                this.nextElementSibling.nextElementSibling.textContent = '';
             }
         });
-    });
 
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const eyeIcon = document.getElementById(fieldId + '-eye');
+        // Form validation
+        document.querySelector('.auth-form').addEventListener('submit', function(e) {
+            const agreeToTerms = document.getElementById('agreeToTerms');
+            
+            if (!agreeToTerms.checked) {
+                e.preventDefault();
+                agreeToTerms.focus();
+                alert('Please agree to the Terms and Conditions to continue.');
+                return false;
+            }
+        });
 
-        if (field.type === 'password') {
-            field.type = 'text';
-            eyeIcon.classList.remove('fa-eye');
-            eyeIcon.classList.add('fa-eye-slash');
-        } else {
-            field.type = 'password';
-            eyeIcon.classList.remove('fa-eye-slash');
-            eyeIcon.classList.add('fa-eye');
-        }
-    }
-
-    function previewAvatar(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('avatarPreview').src = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-</script>
+        // Auto-focus first input
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstInput = document.querySelector('input[autofocus]');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        });
+    </script>
+}
