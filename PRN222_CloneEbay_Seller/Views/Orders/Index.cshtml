@@ -44,7 +44,7 @@
 
                 <!-- Other tabs -->
                 <div class="tab-wrapper">
-                    <a href="#" class="tab has-dropdown">Listings</a>
+                    <a href="/Listing" class="tab has-dropdown">Listings</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Create listing</a>
                         <a href="#" class="dropdown-item">Active</a>
@@ -122,6 +122,9 @@
                 @TempData["Error"]
             </div>
         }
+
+        <!-- Hidden CSRF Token for JavaScript form submissions -->
+        @Html.AntiForgeryToken()
 
         <!-- Page Header with Status Filter -->
         <div class="page-header">
@@ -251,14 +254,6 @@
                             <div class="order-col-actions">
                                 <div class="action-buttons">
                                     <a href="@Url.Action("Details", new { id = order.Id })" class="action-btn">View</a>
-                                    @if (order.Status == "Paid")
-                                    {
-                                        <button type="button" class="action-btn btn-ship" onclick="showShipModal(@order.Id)">Ship</button>
-                                    }
-                                    @if (order.Status == "Pending")
-                                    {
-                                        <button type="button" class="action-btn btn-cancel" onclick="showCancelModal(@order.Id)">Cancel</button>
-                                    }
                                 </div>
                             </div>
                         </div>
@@ -289,85 +284,7 @@
         </div>
     </div>
 
-    <!-- Ship Order Modal -->
-    <div id="shipModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Ship Order</h3>
-                <span class="close" onclick="closeModal('shipModal')">&times;</span>
-            </div>
-            <form asp-action="Ship" method="post">
-                <input type="hidden" id="shipOrderId" name="orderId" />
-                <div class="form-group">
-                    <label for="trackingNumber">Tracking Number:</label>
-                    <input type="text" id="trackingNumber" name="trackingNumber" class="form-control" required />
-                </div>
-                <div class="form-group">
-                    <label for="carrier">Carrier:</label>
-                    <select id="carrier" name="carrier" class="form-control" required>
-                        <option value="">Select Carrier</option>
-                        <option value="UPS">UPS</option>
-                        <option value="FedEx">FedEx</option>
-                        <option value="USPS">USPS</option>
-                        <option value="DHL">DHL</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="button-row">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('shipModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Ship Order</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Cancel Order Modal -->
-    <div id="cancelModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Cancel Order</h3>
-                <span class="close" onclick="closeModal('cancelModal')">&times;</span>
-            </div>
-            <form asp-action="Cancel" method="post">
-                <input type="hidden" id="cancelOrderId" name="orderId" />
-                <div class="form-group">
-                    <label for="reason">Cancellation Reason:</label>
-                    <textarea id="reason" name="reason" class="form-control" rows="3" placeholder="Enter reason for cancellation..."></textarea>
-                </div>
-                <div class="button-row">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('cancelModal')">Close</button>
-                    <button type="submit" class="btn btn-cancel">Cancel Order</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <footer>
-        <p>&copy; 2024 eBay Clone. All rights reserved.</p>
-    </footer>
-
     <script>
-        function showShipModal(orderId) {
-            document.getElementById('shipOrderId').value = orderId;
-            document.getElementById('shipModal').style.display = 'block';
-        }
-
-        function showCancelModal(orderId) {
-            document.getElementById('cancelOrderId').value = orderId;
-            document.getElementById('cancelModal').style.display = 'block';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-        }
-
         function filterByStatus(status) {
             const url = new URL(window.location);
             url.searchParams.set('status', status);

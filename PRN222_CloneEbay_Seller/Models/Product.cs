@@ -23,6 +23,8 @@ public partial class Product
 
     public DateTime? AuctionEndTime { get; set; }
 
+    public string? Status { get; set; } 
+
     public virtual ICollection<Bid> Bids { get; set; } = new List<Bid>();
 
     public virtual Category? Category { get; set; }

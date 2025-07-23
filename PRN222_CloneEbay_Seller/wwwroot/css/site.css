@@ -2066,7 +2066,7 @@ footer {
 }
 
 .modal form {
-    padding: 24px;
+    padding: 0px !important;
 }
 
 /* Status Message Styles */
