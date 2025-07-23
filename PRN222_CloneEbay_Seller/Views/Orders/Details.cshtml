@@ -307,33 +307,10 @@
                     
                     <div class="order-actions">
                         <!-- Quick Action Buttons -->
-                        <div id="quickActions" class="quick-actions" style="display: none;">
-                            <h4>Available Actions</h4>
+                        <div id="quickActions" class="quick-actions">
                             <!-- Will be populated by JavaScript -->
                         </div>
                         
-                        <!-- Status Update Form with Dynamic Options -->
-                        <div class="status-update-form">
-                            <!-- Step-by-step advancement -->
-                            <div class="step-advancement" style="margin-bottom: 16px;">
-                                <form asp-action="AdvanceToNextStep" method="post" id="advanceStepForm">
-                                    <input type="hidden" name="orderId" value="@Model.Id" />
-                                    <button type="submit" class="advance-step-btn" id="advanceStepBtn" style="display: none;">
-                                        ➡️ Advance to Next Step
-                                    </button>
-                                </form>
-                            </div>
-
-                            <form asp-action="UpdateStatus" method="post" id="statusUpdateForm">
-                                <input type="hidden" name="orderId" value="@Model.Id" />
-                                <label for="status">Update Status:</label>
-                                <select name="status" id="statusSelect" class="form-control">
-                                    <option value="">Loading...</option>
-                                </select>
-                                <button type="submit" class="btn btn-primary" id="updateStatusBtn" disabled>Update Status</button>
-                            </form>
-                        </div>
-
                         <!-- Current Status Info -->
                         <div class="current-status-info">
                             <div class="status-label">Current Status:</div>
@@ -367,6 +344,7 @@
                 <span class="close" onclick="closeModal('shipModal')">&times;</span>
             </div>
             <form asp-action="Ship" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="orderId" value="@Model.Id" />
                 <div class="form-group">
                     <label for="trackingNumber">Tracking Number:</label>
@@ -399,6 +377,7 @@
                 <span class="close" onclick="closeModal('cancelModal')">&times;</span>
             </div>
             <form asp-action="Cancel" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="orderId" value="@Model.Id" />
                 <div class="form-group">
                     <label for="reason">Cancellation Reason:</label>
@@ -420,6 +399,7 @@
                 <span class="close" onclick="closeModal('refundModal')">&times;</span>
             </div>
             <form asp-action="ProcessRefund" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" name="orderId" value="@Model.Id" />
                 <div class="form-group">
                     <label for="amount">Refund Amount:</label>
@@ -467,40 +447,16 @@
         document.addEventListener('DOMContentLoaded', function() {
             const orderId = @Model.Id;
             const currentStatus = '@(Model.Status ?? "")';
-            const statusSelect = document.getElementById('statusSelect');
-            const updateStatusBtn = document.getElementById('updateStatusBtn');
-            const advanceStepBtn = document.getElementById('advanceStepBtn');
+            
+            // Load buttons directly without API calls
+            createQuickActionButtons(null, orderId);
+            
+            // Hide loading message and show status info
             const allowedTransitionsDiv = document.getElementById('allowedTransitions');
-            const quickActionsDiv = document.getElementById('quickActions');
-            const noActionsMessage = document.getElementById('noActionsMessage');
-
-            // Load available actions and allowed status transitions
-            loadAvailableActions(orderId, currentStatus);
-
-            // Enable or disable the update button based on status selection
-            statusSelect.addEventListener('change', function() {
-                updateStatusBtn.disabled = !this.value;
-                
-                // Validate the status change before allowing submission
-                if (this.value) {
-                    validateStatusChange(currentStatus, this.value);
-                }
-            });
-
-            // Add confirmation to status update form
-            document.getElementById('statusUpdateForm').addEventListener('submit', function(e) {
-                const newStatus = statusSelect.value;
-                if (newStatus && !confirm(`Are you sure you want to change order status from "${currentStatus}" to "${newStatus}"?`)) {
-                    e.preventDefault();
-                }
-            });
-
-            // Add confirmation to advance step form
-            document.getElementById('advanceStepForm').addEventListener('submit', function(e) {
-                if (!confirm('Are you sure you want to advance this order to the next step?')) {
-                    e.preventDefault();
-                }
-            });
+            allowedTransitionsDiv.innerHTML = `
+                <div class="transitions-label">Current Status: <strong>${currentStatus}</strong></div>
+                <div class="transitions-note">Use action buttons above to change status</div>
+            `;
         });
 
         // Load available actions for the order
@@ -570,69 +526,6 @@
             }
         }
 
-        // Create quick action buttons based on available actions
-        function createQuickActionButtons(actions, orderId) {
-            const quickActionsDiv = document.getElementById('quickActions');
-            quickActionsDiv.innerHTML = ''; // Clear existing buttons
-
-            // ✅ KIỂM TRA NẾU ORDER ĐÃ DELIVERED
-            const currentStatus = '@(Model.Status ?? "")';
-            if (currentStatus.toLowerCase() === 'delivered') {
-                quickActionsDiv.innerHTML = `
-                    <div class="delivered-notice">
-                        <div class="delivered-icon">✅</div>
-                        <div class="delivered-title">Order Completed</div>
-                        <div class="delivered-message">
-                            This order has been successfully delivered and cannot be modified further.
-                            Customer reviews are now available below.
-                        </div>
-                    </div>
-                `;
-                quickActionsDiv.style.display = 'block';
-                noActionsMessage.style.display = 'none';
-                return;
-            }
-
-            if (actions.canShip) {
-                const shipBtn = createActionButton('📦 Ship Order', 'btn-ship', () => showShipModal(orderId));
-                quickActionsDiv.appendChild(shipBtn);
-            }
-
-            if (actions.canCancel) {
-                const cancelBtn = createActionButton('❌ Cancel Order', 'btn-cancel', () => showCancelModal(orderId));
-                quickActionsDiv.appendChild(cancelBtn);
-            }
-
-            if (actions.canRefund) {
-                const refundBtn = createActionButton('💰 Process Refund', 'btn-refund', () => showRefundModal(orderId));
-                quickActionsDiv.appendChild(refundBtn);
-            }
-
-            if (actions.canMarkAsPaid) {
-                const paidBtn = createActionButton('✅ Mark as Paid', 'btn-paid', () => updateStatus(orderId, 'Paid'));
-                quickActionsDiv.appendChild(paidBtn);
-            }
-
-            if (actions.canStartProcessing) {
-                const processBtn = createActionButton('⚙️ Start Processing', 'btn-processing', () => updateStatus(orderId, 'Processing'));
-                quickActionsDiv.appendChild(processBtn);
-            }
-
-            if (actions.canMarkAsDelivered) {
-                const deliveredBtn = createActionButton('📋 Mark as Delivered', 'btn-delivered', () => updateStatus(orderId, 'Delivered'));
-                quickActionsDiv.appendChild(deliveredBtn);
-            }
-
-            // Show the quick actions section if there are any actions available
-            if (quickActionsDiv.children.length > 0) {
-                quickActionsDiv.style.display = 'block';
-                noActionsMessage.style.display = 'none';
-            } else {
-                quickActionsDiv.style.display = 'none';
-                noActionsMessage.style.display = 'block';
-            }
-        }
-
         // Helper function to create action buttons
         function createActionButton(text, className, onClick) {
             const button = document.createElement('button');
@@ -641,6 +534,74 @@
             button.textContent = text;
             button.onclick = onClick;
             return button;
+        }
+
+        // Create quick action buttons based on current status
+        function createQuickActionButtons(actions, orderId) {
+            const quickActionsDiv = document.getElementById('quickActions');
+            quickActionsDiv.innerHTML = '<h4>Available Actions</h4>'; // Clear and add title
+
+            const currentStatus = '@(Model.Status ?? "")';
+            
+            // ✅ LOGIC CẬP NHẬT THEO YÊU CẦU MỚI
+            switch (currentStatus.toLowerCase()) {
+                case 'pending':
+                    // Pending có 3 nút: Mark as Paid, Ship, Cancel
+                    quickActionsDiv.appendChild(createActionButton('💳 Mark as Paid', 'btn-paid', () => updateStatus(orderId, 'Paid')));
+                    quickActionsDiv.appendChild(createActionButton('❌ Cancel Order', 'btn-cancel', () => showCancelModal(orderId)));
+                    break;
+                    
+                case 'paid':
+                    // Paid có 3 nút: Start Processing, Ship, Cancel
+                    quickActionsDiv.appendChild(createActionButton('⚙️ Start Processing', 'btn-processing', () => updateStatus(orderId, 'Processing')));
+                    break;
+                    
+                case 'processing':
+                    // Processing có 2 nút: Ship, Cancel
+                    quickActionsDiv.appendChild(createActionButton('📦 Ship Order', 'btn-ship', () => showShipModal(orderId)));
+                    break;
+                    
+                case 'shipped':
+                    // Shipped có thể chuyển thành Delivered hoặc Returned
+                    quickActionsDiv.appendChild(createActionButton('✅ Mark as Delivered', 'btn-delivered', () => updateStatus(orderId, 'Delivered')));
+                    quickActionsDiv.appendChild(createActionButton('↩️ Mark as Returned', 'btn-returned', () => updateStatus(orderId, 'Returned')));
+                    break;
+                    
+                
+                    
+                case 'returned':
+                    // Returned có thể chuyển thành Refunded
+                    quickActionsDiv.appendChild(createActionButton('💰 Process Refund', 'btn-refund', () => showRefundModal(orderId)));
+                    break;
+                    
+                case 'refunded':
+                case 'cancelled':
+                    // Status cuối - hiển thị thông báo
+                    quickActionsDiv.innerHTML = `
+                        <h4>Order Status</h4>
+                        <div class="status-notice">
+                            <div class="notice-icon">${currentStatus === 'refunded' ? '💰' : '❌'}</div>
+                            <div class="notice-title">Order ${currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}</div>
+                            <div class="notice-message">
+                                ${currentStatus === 'refunded' ? 'This order has been refunded.' :
+                                  'This order has been cancelled.'}
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    // Status không xác định
+                    quickActionsDiv.innerHTML = `
+                        <h4>Order Status</h4>
+                        <div class="status-notice">
+                            <div class="notice-icon">❓</div>
+                            <div class="notice-title">Unknown Status</div>
+                            <div class="notice-message">Status: ${currentStatus || 'Unknown'}</div>
+                        </div>
+                    `;
+                    break;
+            }
         }
 
         // Update advance step button visibility
@@ -660,6 +621,13 @@
                 form.method = 'POST';
                 form.action = '/Orders/UpdateStatus';
                 
+                // Add CSRF token
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                
                 const orderIdInput = document.createElement('input');
                 orderIdInput.type = 'hidden';
                 orderIdInput.name = 'orderId';
@@ -670,6 +638,7 @@
                 statusInput.name = 'status';
                 statusInput.value = newStatus;
                 
+                form.appendChild(tokenInput);
                 form.appendChild(orderIdInput);
                 form.appendChild(statusInput);
                 document.body.appendChild(form);

@@ -1,0 +1,528 @@
+@model PRN222_CloneEbay_Seller.Models.Product
+@{
+    ViewData["Title"] = "Edit Product - " + Model.Title;
+    var categories = ViewBag.Categories as List<PRN222_CloneEbay_Seller.Models.Category> ?? new List<PRN222_CloneEbay_Seller.Models.Category>();
+    
+    // Handle Images property - split by comma if multiple images
+    var imageUrls = !string.IsNullOrEmpty(Model.Images) ? Model.Images.Split(',').Select(img => img.Trim()).ToList() : new List<string>();
+    var mainImageUrl = imageUrls.FirstOrDefault();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] | eBay</title>
+    <link rel="stylesheet" href="~/css/site.css">
+    <style>
+        .product-details-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .breadcrumb {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumb a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .product-header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .product-main-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .product-images {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+        }
+
+        .thumbnail-gallery {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .thumbnail:hover,
+        .thumbnail.active {
+            border-color: #007bff;
+        }
+
+        .no-image {
+            width: 100%;
+            height: 400px;
+            background: #f8f9fa;
+            border: 2px dashed #e9ecef;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 1.2rem;
+        }
+
+        .edit-form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .form-control:hover {
+            border-color: #bbb;
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .invalid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #dc3545;
+        }
+
+        .form-text {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+        }
+
+        .back-button {
+            margin-bottom: 2rem;
+        }
+
+        .details-sections {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .details-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .product-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+        }
+
+        .preview-section {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .preview-images {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .preview-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="product-details-container">
+        <!-- Back Button -->
+        <div class="back-button">
+            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">
+                <span>←</span>
+                Back to Product Details
+            </a>
+        </div>
+
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="@Url.Action("Index", "Home")">Home</a> &gt;
+            <a href="@Url.Action("Index")">Listings</a> &gt;
+            <a href="@Url.Action("Details", new { id = Model.Id })">@Model.Title</a> &gt;
+            <span>Edit</span>
+        </nav>
+
+        <!-- Product Header -->
+        <div class="product-header">
+            <h1 class="product-title">✏️ Edit Product</h1>
+        </div>
+
+        <!-- Status Messages -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="status-message status-success">
+                @TempData["Success"]
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="status-message status-error">
+                @TempData["Error"]
+            </div>
+        }
+        
+        <form asp-action="Edit" method="post" id="editForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="SellerId" />
+
+            <!-- Product Main Section -->
+            <div class="product-header" style="margin-top: 0;">
+                <div class="product-main-section">
+                    <!-- Product Images Section -->
+                    <div class="product-images">
+                        <div id="imagePreview">
+                            @if (!string.IsNullOrEmpty(mainImageUrl))
+                            {
+                                <img src="@mainImageUrl" alt="@Model.Title" class="main-image" id="mainImage">
+                                @if (imageUrls.Count > 1)
+                                {
+                                    <div class="thumbnail-gallery">
+                                        @foreach (var imageUrl in imageUrls)
+                                        {
+                                            <img src="@imageUrl" alt="@Model.Title" class="thumbnail @(imageUrl == mainImageUrl ? "active" : "")" onclick="changeMainImage('@imageUrl')">
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="no-image">
+                                    📷 No Image Available
+                                </div>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Images" class="form-label">Product Images</label>
+                            <input asp-for="Images" class="form-control" placeholder="Enter image URLs separated by commas" onchange="updateImagePreview()" />
+                            <span asp-validation-for="Images" class="invalid-feedback"></span>
+                            <small class="form-text">Enter image URLs separated by commas. First image will be the main image.</small>
+                        </div>
+                    </div>
+
+                    <!-- Product Info Form -->
+                    <div class="edit-form-section">
+                        <div class="form-group">
+                            <label asp-for="Title" class="form-label">Product Title *</label>
+                            <input asp-for="Title" class="form-control" placeholder="Enter product title" />
+                            <span asp-validation-for="Title" class="invalid-feedback"></span>
+                            <small class="form-text">Choose a clear, descriptive title that buyers will search for</small>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label asp-for="Price" class="form-label">Price *</label>
+                                <input asp-for="Price" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                <span asp-validation-for="Price" class="invalid-feedback"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="CategoryId" class="form-label">Category *</label>
+                                <select asp-for="CategoryId" class="form-control">
+                                    <option value="">Select a category</option>
+                                    @foreach (var category in categories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="CategoryId" class="invalid-feedback"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label asp-for="IsAuction" class="form-label">Listing Type *</label>
+                                <select asp-for="IsAuction" class="form-control" onchange="toggleAuctionEndTime()" id="listingTypeSelect">
+                                    <option value="false" selected="@(Model.IsAuction == false ? "selected" : null)">Buy It Now</option>
+                                    <option value="true" selected="@(Model.IsAuction == true ? "selected" : null)">Auction</option>
+                                </select>
+                                <span asp-validation-for="IsAuction" class="invalid-feedback"></span>
+                                <small class="form-text">Choose if this is a fixed price listing or an auction</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label asp-for="Status" class="form-label">Status</label>
+                                <select asp-for="Status" class="form-control">
+                                    <option value="Draft">Draft</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Scheduled">Scheduled</option>
+                                </select>
+                                <span asp-validation-for="Status" class="invalid-feedback"></span>
+                            </div>
+                        </div>
+
+                        <!-- Auction End Time (conditional) -->
+                        <div class="form-group" id="auctionEndTimeGroup" style="display: @(Model.IsAuction == true ? "block" : "none");">
+                            <label asp-for="AuctionEndTime" class="form-label">Auction End Time *</label>
+                            <input asp-for="AuctionEndTime" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="AuctionEndTime" class="invalid-feedback"></span>
+                            <small class="form-text">Set when the auction should end (required for auction listings)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Sections -->
+            <div class="details-sections">
+                <!-- Description Section -->
+                <div class="details-section">
+                    <h2 class="section-title">Product Description</h2>
+                    <div class="form-group">
+                        <label asp-for="Description" class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="8" placeholder="Describe your product in detail..."></textarea>
+                        <span asp-validation-for="Description" class="invalid-feedback"></span>
+                        <small class="form-text">Include key features, condition, size, color, and other important details</small>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="details-section">
+                    <h2 class="section-title">Save Changes</h2>
+                    <p style="color: #6c757d; margin-bottom: 1.5rem;">Review your changes and save when ready.</p>
+                    <div class="form-actions">
+                        <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary">
+                            <span>✖️</span>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <span>💾</span>
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Add form id to the form
+        document.querySelector('form').id = 'editForm';
+
+        function changeMainImage(imageSrc) {
+            const mainImage = document.getElementById('mainImage');
+            if (mainImage) {
+                mainImage.src = imageSrc;
+            }
+            
+            // Update active thumbnail
+            document.querySelectorAll('.thumbnail').forEach(thumb => {
+                thumb.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateImagePreview() {
+            const imagesInput = document.querySelector('input[name="Images"]');
+            const imagePreview = document.getElementById('imagePreview');
+            
+            if (imagesInput.value.trim()) {
+                const imageUrls = imagesInput.value.split(',').map(url => url.trim()).filter(url => url);
+                
+                if (imageUrls.length > 0) {
+                    const mainImageUrl = imageUrls[0];
+                    
+                    let html = `<img src="${mainImageUrl}" alt="Product Image" class="main-image" id="mainImage">`;
+                    
+                    if (imageUrls.length > 1) {
+                        html += '<div class="thumbnail-gallery">';
+                        imageUrls.forEach((url, index) => {
+                            html += `<img src="${url}" alt="Product Image" class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage('${url}')">`;
+                        });
+                        html += '</div>';
+                    }
+                    
+                    imagePreview.innerHTML = html;
+                } else {
+                    imagePreview.innerHTML = '<div class="no-image">📷 No Image Available</div>';
+                }
+            } else {
+                imagePreview.innerHTML = '<div class="no-image">📷 No Image Available</div>';
+            }
+        }
+
+        // Show/hide auction end time based on listing type
+        function toggleAuctionEndTime() {
+            const isAuction = document.querySelector('select[name="IsAuction"]').value === 'true';
+            const auctionEndTimeGroup = document.getElementById('auctionEndTimeGroup');
+            
+            if (isAuction) {
+                auctionEndTimeGroup.style.display = 'block';
+            } else {
+                auctionEndTimeGroup.style.display = 'none';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleAuctionEndTime();
+        });
+
+        // Form validation
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            const title = document.querySelector('input[name="Title"]').value.trim();
+            const price = document.querySelector('input[name="Price"]').value;
+            const categoryId = document.querySelector('select[name="CategoryId"]').value;
+
+            if (!title) {
+                alert('Please enter a product title');
+                e.preventDefault();
+                return;
+            }
+
+            if (!price || parseFloat(price) <= 0) {
+                alert('Please enter a valid price');
+                e.preventDefault();
+                return;
+            }
+
+            if (!categoryId) {
+                alert('Please select a category');
+                e.preventDefault();
+                return;
+            }
+        });
+    </script>
+</body>
+</html>
