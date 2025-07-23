@@ -1,0 +1,106 @@
+﻿@model List<PRN222_CloneEbay_Seller.Models.DisputeViewModel>
+
+@{
+    ViewData["Title"] = "Requests and Disputes";
+    // Thống kê nhanh từ Model
+    var totalDisputes = Model.Count;
+    var openDisputes = Model.Count(d => d.Status?.ToLower() != "resolved");
+    var resolvedDisputes = Model.Count(d => d.Status?.ToLower() == "resolved");
+}
+
+<div class="container">
+    <!-- Header của trang -->
+    <div class="page-header">
+        <div class="page-title-section">
+            <h2 class="page-title">@ViewData["Title"]</h2>
+        </div>
+    </div>
+
+    <!-- Thẻ thống kê -->
+    <div class="cards-grid">
+        <div class="overview-card">
+            <div class="overview-card-title">Total Disputes</div>
+            <div class="overview-card-value">@totalDisputes</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-card-title">Open / In Progress</div>
+            <div class="overview-card-value" style="color: #dc3545;">@openDisputes</div>
+        </div>
+        <div class="overview-card">
+            <div class="overview-card-title">Resolved</div>
+            <div class="overview-card-value" style="color: #198754;">@resolvedDisputes</div>
+        </div>
+    </div>
+
+    <!-- Panel chứa danh sách -->
+    <div class="panel">
+        <div class="panel-header">
+            <h3 class="panel-title">Dispute List</h3>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="orders-table">
+                <div class="orders-table-header">
+                    <div class="order-col-id">Order ID</div>
+                    <div class="order-col-buyer">Buyer</div>
+                    <div class="order-col-items" style="flex: 2;">Issue Summary</div>
+                    <div class="order-col-status">Status</div>
+                    <div class="order-col-actions" style="justify-content: center;">Actions</div>
+                </div>
+
+                @foreach (var dispute in Model)
+                {
+                    <div class="order-row">
+                        <div class="order-col-id">
+                            <strong><a asp-controller="Order" asp-action="Details" asp-route-id="@dispute.OrderId">#@dispute.OrderId</a></strong>
+                        </div>
+                        <div class="order-col-buyer">
+                            <div class="buyer-info">
+                                <div class="buyer-name">@dispute.BuyerName</div>
+                            </div>
+                        </div>
+                        <div class="order-col-items" style="flex: 2; align-self: center;">
+                            @dispute.DescriptionSnippet
+                        </div>
+
+                        <!-- ======================= PHẦN HIỂN THỊ STATUS ĐÃ ĐƯỢC CẬP NHẬT ======================= -->
+                        <div class="order-col-status">
+                            @if (dispute.Status?.ToLower() == "open")
+                            {
+                                <span class="status-badge status-cancelled">OPEN</span>
+                            }
+                            else if (dispute.Status?.ToLower() == "in progress")
+                            {
+                                <span class="status-badge status-pending">IN PROGRESS</span>
+                            }
+                            else if (dispute.Status?.ToLower() == "resolved")
+                            {
+                                <span class="status-badge status-delivered">RESOLVED</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-unknown">@(dispute.Status?.ToUpper() ?? "UNKNOWN")</span>
+                            }
+                        </div>
+                        <!-- ======================= KẾT THÚC PHẦN CẬP NHẬT ======================= -->
+
+                        <div class="order-col-actions" style="justify-content: center;">
+                            <div class="action-buttons">
+                                <a asp-action="DisputeDetails" asp-route-id="@dispute.DisputeId" class="action-btn">View Dispute</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">🛡️</div>
+                <div class="empty-title">No Disputes Found</div>
+                <div class="empty-message">You currently have no open or past disputes.</div>
+            </div>
+        }
+    </div>
+</div>

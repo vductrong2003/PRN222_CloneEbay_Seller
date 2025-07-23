@@ -25,6 +25,12 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddScoped<IDisputeService, DisputeService>();
+// Đăng ký EmailSettings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+
+// Đăng ký các services
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 var app = builder.Build();
 
