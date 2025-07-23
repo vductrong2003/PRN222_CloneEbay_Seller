@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PRN222_CloneEbay_Seller.Models;
 using PRN222_CloneEbay_Seller.Services.Interfaces;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography;
@@ -107,15 +108,7 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                 var smtpPass = _configuration["EmailSettings:SmtpPassword"] ?? "";
                 var fromEmail = _configuration["EmailSettings:FromEmail"] ?? smtpUser;
 
-                // Always log to console for debugging
-                Console.WriteLine($"=== SENDING EMAIL ===");
-                Console.WriteLine($"To: {email}");
-                Console.WriteLine($"From: {fromEmail}");
-                Console.WriteLine($"Password: {password}");
-                Console.WriteLine($"SMTP: {smtpHost}:{smtpPort}");
-                Console.WriteLine($"==================");
 
-                // Skip email sending if no real credentials configured
                 if (string.IsNullOrEmpty(smtpUser) || smtpUser.Contains("your-email") || 
                     string.IsNullOrEmpty(smtpPass) || smtpPass.Contains("your-app-password"))
                 {
@@ -181,12 +174,7 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
 
                 // Send new password via email (with fallback to console)
                 var emailSent = await SendPasswordEmailAsync(email, newPassword, user.Username ?? "User");
-                
-                // Always log to console for development
-                Console.WriteLine($"=== PASSWORD RESET ===");
-                Console.WriteLine($"Email: {email}");
-                Console.WriteLine($"New Password: {newPassword}");
-                Console.WriteLine($"====================");
+
 
                 return emailSent;
             }
@@ -290,6 +278,135 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
         {
             var hashToVerify = HashPassword(password);
             return hashToVerify == hashedPassword;
+        }
+
+        public async Task<ProfileViewModel?> GetUserProfileAsync(int userId)
+        {
+            try
+            {
+                var user = await _context.Users
+                    .Include(u => u.Stores)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null) return null;
+
+                var statistics = await GetUserStatisticsAsync(userId);
+
+                var profile = new ProfileViewModel
+                {
+                    Id = user.Id,
+                    Username = user.Username ?? "",
+                    Email = user.Email ?? "",
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    Status = user.Status,
+                    Store = user.Stores?.FirstOrDefault(),
+                    TotalListings = (int)(statistics.GetValueOrDefault("TotalListings", 0)),
+                    ActiveListings = (int)(statistics.GetValueOrDefault("ActiveListings", 0)),
+                    TotalOrders = (int)(statistics.GetValueOrDefault("TotalOrders", 0)),
+                    TotalRevenue = (decimal)(statistics.GetValueOrDefault("TotalRevenue", 0m)),
+                    AverageRating = (double)(statistics.GetValueOrDefault("AverageRating", 0.0)),
+                    TotalReviews = (int)(statistics.GetValueOrDefault("TotalReviews", 0))
+                };
+
+                return profile;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateUserProfileAsync(int userId, UpdateProfileViewModel model)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return false;
+
+                // Check if username is unique (excluding current user)
+                var usernameExists = await _context.Users
+                    .AnyAsync(u => u.Username == model.Username && u.Id != userId);
+                if (usernameExists) return false;
+
+                // Check if email is unique (excluding current user)
+                var emailExists = await _context.Users
+                    .AnyAsync(u => u.Email == model.Email && u.Id != userId);
+                if (emailExists) return false;
+
+                // Update user properties
+                user.Username = model.Username;
+                user.Email = model.Email;
+                user.AvatarUrl = model.AvatarUrl;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<Dictionary<string, object>> GetUserStatisticsAsync(int userId)
+        {
+            try
+            {
+                var statistics = new Dictionary<string, object>();
+
+                // Product statistics
+                var totalListings = await _context.Products
+                    .CountAsync(p => p.SellerId == userId);
+                var activeListings = await _context.Products
+                    .CountAsync(p => p.SellerId == userId && p.Status == "Active");
+
+                statistics["TotalListings"] = totalListings;
+                statistics["ActiveListings"] = activeListings;
+
+                // Order statistics
+                var totalOrders = await _context.OrderTables
+                    .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == userId))
+                    .CountAsync();
+
+                var totalRevenue = await _context.OrderTables
+                    .Where(o => o.OrderItems.Any(oi => oi.Product.SellerId == userId))
+                    .SelectMany(o => o.OrderItems)
+                    .Where(oi => oi.Product.SellerId == userId)
+                    .SumAsync(oi => oi.Quantity * oi.UnitPrice);
+
+                statistics["TotalOrders"] = totalOrders;
+                statistics["TotalRevenue"] = totalRevenue;
+
+                // Review statistics
+                var productIds = await _context.Products
+                    .Where(p => p.SellerId == userId)
+                    .Select(p => p.Id)
+                    .ToListAsync();
+
+                var reviews = await _context.Reviews
+                    .Where(r => productIds.Contains((int)r.ProductId))
+                    .ToListAsync();
+
+                var totalReviews = reviews.Count;
+                var averageRating = totalReviews > 0 ? reviews.Average(r => r.Rating) : 0.0;
+
+                statistics["TotalReviews"] = totalReviews;
+                statistics["AverageRating"] = averageRating;
+
+                return statistics;
+            }
+            catch
+            {
+                return new Dictionary<string, object>
+                {
+                    ["TotalListings"] = 0,
+                    ["ActiveListings"] = 0,
+                    ["TotalOrders"] = 0,
+                    ["TotalRevenue"] = 0m,
+                    ["TotalReviews"] = 0,
+                    ["AverageRating"] = 0.0
+                };
+            }
         }
     }
 }

@@ -28,6 +28,10 @@ namespace PRN222_CloneEbay_Seller.Services.Interfaces
         Task<Dictionary<string, object>> GetProductPerformanceAsync(int productId, int days = 30);
         Task<List<Product>> GetTopPerformingProductsAsync(int sellerId, int count = 10);
         
+        // Reviews
+        Task<List<Review>> GetProductReviewsAsync(int productId);
+        Task<List<Product>> GetRelatedProductsAsync(int productId, int count = 4);
+        
         // Bulk operations
         Task<bool> BulkUpdateStatusAsync(List<int> productIds, string status);
         Task<bool> BulkDeleteAsync(List<int> productIds);

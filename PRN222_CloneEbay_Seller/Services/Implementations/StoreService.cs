@@ -22,6 +22,13 @@ namespace PRN222_CloneEbay_Seller.Services.Implementations
                 .ToListAsync();
         }
 
+        public async Task<Store?> GetStoreBySellerIdAsync(int sellerId)
+        {
+            return await _context.Stores
+                .Include(s => s.Seller)
+                .FirstOrDefaultAsync(s => s.SellerId == sellerId);
+        }
+
         public async Task<Store?> GetStoreByIdAsync(int storeId)
         {
             return await _context.Stores

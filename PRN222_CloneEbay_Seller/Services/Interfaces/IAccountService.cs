@@ -28,5 +28,10 @@ namespace PRN222_CloneEbay_Seller.Services.Interfaces
         
         // Seller feature access
         Task<bool> CanAccessSellerFeaturesAsync(int userId);
+        
+        // Profile management
+        Task<ProfileViewModel?> GetUserProfileAsync(int userId);
+        Task<bool> UpdateUserProfileAsync(int userId, UpdateProfileViewModel model);
+        Task<Dictionary<string, object>> GetUserStatisticsAsync(int userId);
     }
 }

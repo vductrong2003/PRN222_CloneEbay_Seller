@@ -6,6 +6,7 @@ namespace PRN222_CloneEbay_Seller.Services.Interfaces
     {
         // Get stores by seller
         Task<List<Store>> GetStoresBySellerIdAsync(int sellerId);
+        Task<Store?> GetStoreBySellerIdAsync(int sellerId); // Get single store by seller ID
         
         // Store CRUD operations
         Task<Store?> GetStoreByIdAsync(int storeId);

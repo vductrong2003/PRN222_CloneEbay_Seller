@@ -1,0 +1,456 @@
+@model PRN222_CloneEbay_Seller.Models.OverviewViewModel
+@{
+    ViewData["Title"] = "Overview - Seller Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="overview-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-section">
+            <h1 class="page-title">
+                <span class="icon">📊</span>
+                Seller Dashboard
+            </h1>
+            <p class="page-subtitle">
+                Welcome back! Here's what's happening with your store today.
+            </p>
+        </div>
+        <div class="header-actions">
+            <div class="last-updated">
+                Last updated: @DateTime.Now.ToString("MMM dd, yyyy - HH:mm")
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Information Banner -->
+    @if (Model.Store != null)
+    {
+        <div class="store-banner">
+            <div class="store-info">
+                @if (!string.IsNullOrEmpty(Model.StoreLogoUrl))
+                {
+                    <img src="@Model.StoreLogoUrl" alt="@Model.StoreName" class="store-logo">
+                }
+                else
+                {
+                    <div class="store-logo-placeholder">🏪</div>
+                }
+                <div class="store-details">
+                    <h2 class="store-name">@Model.StoreName</h2>
+                    <p class="store-description">@Model.StoreDescription</p>
+                    <div class="store-stats">
+                        <span class="stat-item">
+                            <span class="icon">⭐</span>
+                            @Model.AverageRating.ToString("F1") (@Model.TotalReviews reviews)
+                        </span>
+                        <span class="stat-item">
+                            <span class="icon">👥</span>
+                            @Model.TotalCustomers customers
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="store-actions">
+                <a href="@Url.Action("Edit", "Stores")" class="btn-secondary">
+                    <span class="icon">✏️</span>
+                    Edit Store
+                </a>
+            </div>
+        </div>
+    }
+
+    <!-- Key Metrics Cards -->
+    <div class="metrics-grid">
+        <!-- Revenue Card -->
+        <div class="metric-card revenue-card">
+            <div class="metric-header">
+                <h3 class="metric-title">Revenue</h3>
+                <span class="metric-icon">💰</span>
+            </div>
+            <div class="metric-value">$@Model.TotalRevenue.ToString("N0")</div>
+            <div class="metric-breakdown">
+                <div class="breakdown-item">
+                    <span class="label">This Month:</span>
+                    <span class="value">$@Model.MonthlyRevenue.ToString("N0")</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="label">This Week:</span>
+                    <span class="value">$@Model.WeeklyRevenue.ToString("N0")</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="label">Today:</span>
+                    <span class="value">$@Model.DailyRevenue.ToString("N0")</span>
+                </div>
+            </div>
+            @if (Model.RevenueGrowth != 0)
+            {
+                <div class="metric-growth @(Model.RevenueGrowth > 0 ? "positive" : "negative")">
+                    <span class="growth-icon">@(Model.RevenueGrowth > 0 ? "📈" : "📉")</span>
+                    @Model.RevenueGrowth.ToString("F1")% vs last month
+                </div>
+            }
+        </div>
+
+        <!-- Orders Card -->
+        <div class="metric-card orders-card">
+            <div class="metric-header">
+                <h3 class="metric-title">Orders</h3>
+                <span class="metric-icon">📦</span>
+            </div>
+            <div class="metric-value">@Model.TotalOrders</div>
+            <div class="metric-breakdown">
+                <div class="breakdown-item">
+                    <span class="label">This Month:</span>
+                    <span class="value">@Model.MonthlyOrders</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="label">This Week:</span>
+                    <span class="value">@Model.WeeklyOrders</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="label">Today:</span>
+                    <span class="value">@Model.DailyOrders</span>
+                </div>
+            </div>
+            <div class="metric-detail">
+                Avg Order Value: $@Model.AverageOrderValue.ToString("N0")
+            </div>
+        </div>
+
+        <!-- Products Card -->
+        <div class="metric-card products-card">
+            <div class="metric-header">
+                <h3 class="metric-title">Products</h3>
+                <span class="metric-icon">🛍️</span>
+            </div>
+            <div class="metric-value">@Model.TotalProducts</div>
+            <div class="metric-breakdown">
+                <div class="breakdown-item">
+                    <span class="label">Active:</span>
+                    <span class="value success">@Model.ActiveProducts</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="label">Out of Stock:</span>
+                    <span class="value warning">@Model.OutOfStockProducts</span>
+                </div>
+                <div class="breakdown-item">
+                    <span class="label">Draft:</span>
+                    <span class="value">@Model.DraftProducts</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Rates Card -->
+        <div class="metric-card rates-card">
+            <div class="metric-header">
+                <h3 class="metric-title">Success Rates</h3>
+                <span class="metric-icon">📊</span>
+            </div>
+            <div class="rates-content">
+                <div class="rate-item">
+                    <div class="rate-label">Success Rate</div>
+                    <div class="rate-bar">
+                        <div class="rate-fill success" style="width: @Model.SuccessRate%"></div>
+                    </div>
+                    <div class="rate-value">@Model.SuccessRate.ToString("F1")%</div>
+                </div>
+                <div class="rate-item">
+                    <div class="rate-label">Refund Rate</div>
+                    <div class="rate-bar">
+                        <div class="rate-fill warning" style="width: @Model.RefundRate%"></div>
+                    </div>
+                    <div class="rate-value">@Model.RefundRate.ToString("F1")%</div>
+                </div>
+                <div class="rate-item">
+                    <div class="rate-label">Cancellation Rate</div>
+                    <div class="rate-bar">
+                        <div class="rate-fill error" style="width: @Model.CancellationRate%"></div>
+                    </div>
+                    <div class="rate-value">@Model.CancellationRate.ToString("F1")%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Status Overview -->
+    <div class="status-overview">
+        <h3 class="section-title">
+            <span class="icon">📋</span>
+            Order Status Overview
+        </h3>
+        <div class="status-grid">
+            <div class="status-item pending">
+                <div class="status-count">@Model.PendingOrders</div>
+                <div class="status-label">Pending</div>
+            </div>
+            <div class="status-item processing">
+                <div class="status-count">@Model.ProcessingOrders</div>
+                <div class="status-label">Processing</div>
+            </div>
+            <div class="status-item shipped">
+                <div class="status-count">@Model.ShippedOrders</div>
+                <div class="status-label">Shipped</div>
+            </div>
+            <div class="status-item delivered">
+                <div class="status-count">@Model.DeliveredOrders</div>
+                <div class="status-label">Delivered</div>
+            </div>
+            <div class="status-item cancelled">
+                <div class="status-count">@Model.CancelledOrders</div>
+                <div class="status-label">Cancelled</div>
+            </div>
+            <div class="status-item refunded">
+                <div class="status-count">@Model.RefundedOrders</div>
+                <div class="status-label">Refunded</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="main-content-grid">
+        <!-- Top Products Section -->
+        <div class="content-section top-products-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <span class="icon">🏆</span>
+                    Top Performing Products
+                </h3>
+                <div class="section-tabs">
+                    <button class="tab-btn active" data-tab="selling">Best Selling</button>
+                    <button class="tab-btn" data-tab="rated">Top Rated</button>
+                    <button class="tab-btn" data-tab="revenue">Most Revenue</button>
+                </div>
+            </div>
+
+            <!-- Best Selling Products -->
+            <div class="tab-content active" data-tab="selling">
+                @if (Model.TopSellingProducts.Any())
+                {
+                    <div class="products-list">
+                        @foreach (var product in Model.TopSellingProducts)
+                        {
+                            <div class="product-item">
+                                <div class="product-image">
+                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                    {
+                                        <img src="@product.ImageUrl" alt="@product.ProductName">
+                                    }
+                                    else
+                                    {
+                                        <div class="image-placeholder">📷</div>
+                                    }
+                                </div>
+                                <div class="product-info">
+                                    <h4 class="product-name">@product.ProductName</h4>
+                                    <div class="product-stats">
+                                        <span class="stat">💰 $@product.Price.ToString("N0")</span>
+                                        <span class="stat">📦 @product.TotalSold sold</span>
+                                        <span class="stat">⭐ @product.AverageRating.ToString("F1")</span>
+                                    </div>
+                                </div>
+                                <div class="product-revenue">
+                                    $@product.TotalRevenue.ToString("N0")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">📦</div>
+                        <p>No sales data available yet.</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Top Rated Products -->
+            <div class="tab-content" data-tab="rated">
+                @if (Model.TopRatedProducts.Any())
+                {
+                    <div class="products-list">
+                        @foreach (var product in Model.TopRatedProducts)
+                        {
+                            <div class="product-item">
+                                <div class="product-image">
+                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                    {
+                                        <img src="@product.ImageUrl" alt="@product.ProductName">
+                                    }
+                                    else
+                                    {
+                                        <div class="image-placeholder">📷</div>
+                                    }
+                                </div>
+                                <div class="product-info">
+                                    <h4 class="product-name">@product.ProductName</h4>
+                                    <div class="product-stats">
+                                        <span class="stat">💰 $@product.Price.ToString("N0")</span>
+                                        <span class="stat">⭐ @product.AverageRating.ToString("F1")</span>
+                                        <span class="stat">📝 @product.ReviewCount reviews</span>
+                                    </div>
+                                </div>
+                                <div class="product-rating">
+                                    <div class="rating-stars">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <span class="star @(i <= product.AverageRating ? "filled" : "")">⭐</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">⭐</div>
+                        <p>No reviews available yet.</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Most Revenue Products -->
+            <div class="tab-content" data-tab="revenue">
+                @if (Model.TopRevenueProducts.Any())
+                {
+                    <div class="products-list">
+                        @foreach (var product in Model.TopRevenueProducts)
+                        {
+                            <div class="product-item">
+                                <div class="product-image">
+                                    @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                    {
+                                        <img src="@product.ImageUrl" alt="@product.ProductName">
+                                    }
+                                    else
+                                    {
+                                        <div class="image-placeholder">📷</div>
+                                    }
+                                </div>
+                                <div class="product-info">
+                                    <h4 class="product-name">@product.ProductName</h4>
+                                    <div class="product-stats">
+                                        <span class="stat">💰 $@product.Price.ToString("N0")</span>
+                                        <span class="stat">📦 @product.TotalSold sold</span>
+                                        <span class="stat">⭐ @product.AverageRating.ToString("F1")</span>
+                                    </div>
+                                </div>
+                                <div class="product-revenue highlight">
+                                    $@product.TotalRevenue.ToString("N0")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">💰</div>
+                        <p>No revenue data available yet.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Activities Section -->
+        <div class="content-section activities-section">
+            <div class="section-header">
+                <h3 class="section-title">
+                    <span class="icon">🔔</span>
+                    Recent Activities
+                </h3>
+                <div class="section-tabs">
+                    <button class="tab-btn active" data-tab="orders">Recent Orders</button>
+                    <button class="tab-btn" data-tab="reviews">Recent Reviews</button>
+                </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="tab-content active" data-tab="orders">
+                @if (Model.RecentOrders.Any())
+                {
+                    <div class="activities-list">
+                        @foreach (var order in Model.RecentOrders)
+                        {
+                            <div class="activity-item order-item">
+                                <div class="activity-icon">📦</div>
+                                <div class="activity-content">
+                                    <div class="activity-header">
+                                        <span class="activity-title">Order #@order.OrderId</span>
+                                        <span class="activity-time">@order.OrderDate.ToString("MMM dd, HH:mm")</span>
+                                    </div>
+                                    <div class="activity-details">
+                                        <span class="customer">👤 @order.CustomerName</span>
+                                        <span class="amount">💰 $@order.TotalAmount.ToString("N0")</span>
+                                        <span class="items">📦 @order.ItemCount items</span>
+                                    </div>
+                                </div>
+                                <div class="activity-status">
+                                    <span class="status-badge @order.Status.ToLower()">@order.Status</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="section-footer">
+                        <a href="@Url.Action("Index", "Orders")" class="btn-link">
+                            View All Orders →
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">📦</div>
+                        <p>No recent orders.</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Recent Reviews -->
+            <div class="tab-content" data-tab="reviews">
+                @if (Model.RecentReviews.Any())
+                {
+                    <div class="activities-list">
+                        @foreach (var review in Model.RecentReviews)
+                        {
+                            <div class="activity-item review-item">
+                                <div class="activity-icon">⭐</div>
+                                <div class="activity-content">
+                                    <div class="activity-header">
+                                        <span class="activity-title">@review.ProductName</span>
+                                        <span class="activity-time">@review.ReviewDate.ToString("MMM dd, HH:mm")</span>
+                                    </div>
+                                    <div class="activity-details">
+                                        <span class="customer">👤 @review.CustomerName</span>
+                                        <div class="rating">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <span class="star @(i <= review.Rating ? "filled" : "")">⭐</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(review.Comment))
+                                    {
+                                        <div class="review-comment">
+                                            "@(review.Comment.Length > 100 ? review.Comment.Substring(0, 100) + "..." : review.Comment)"
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">⭐</div>
+                        <p>No recent reviews.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

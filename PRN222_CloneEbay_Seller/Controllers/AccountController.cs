@@ -44,10 +44,18 @@ namespace PRN222_CloneEbay_Seller.Controllers
                 {
                     // Set session data
                     HttpContext.Session.SetInt32("UserId", user.Id);
+                    HttpContext.Session.SetString("UserName", user.Username ?? "");
                     HttpContext.Session.SetString("Username", user.Username ?? "");
                     HttpContext.Session.SetString("Email", user.Email ?? "");
+                    HttpContext.Session.SetString("UserRole", user.Role ?? "Seller");
                     HttpContext.Session.SetString("Role", user.Role ?? "Seller");
                     HttpContext.Session.SetString("Status", user.Status ?? "Active");
+                    
+                    // Set avatar if available
+                    if (!string.IsNullOrEmpty(user.AvatarUrl))
+                    {
+                        HttpContext.Session.SetString("UserAvatar", user.AvatarUrl);
+                    }
 
                     TempData["Success"] = "Login successful!";
                     return RedirectToAction("Index", "Home");
@@ -231,9 +239,9 @@ namespace PRN222_CloneEbay_Seller.Controllers
             }
         }
 
-        // POST: Account/Logout
+        // Account/Logout - Support both GET and POST
+        [HttpGet]
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
@@ -242,8 +250,7 @@ namespace PRN222_CloneEbay_Seller.Controllers
             return RedirectToAction("Login");
         }
 
-        // GET: Account/Profile
-        [HttpGet]
+        // GET: /Account/Profile
         public async Task<IActionResult> Profile()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
@@ -254,20 +261,95 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
             try
             {
-                var user = await _accountService.GetUserByIdAsync(userId.Value);
-                if (user == null)
+                var profile = await _accountService.GetUserProfileAsync(userId.Value);
+                if (profile == null)
                 {
-                    TempData["Error"] = "User not found.";
+                    TempData["Error"] = "Profile not found.";
                     return RedirectToAction("Login");
                 }
 
-                return View(user);
+                return View(profile);
             }
             catch
             {
-                TempData["Error"] = "An error occurred while loading profile.";
-                return RedirectToAction("Index", "Home");
+                TempData["Error"] = "An error occurred while loading your profile.";
+                return RedirectToAction("Login");
             }
         }
+
+        // GET: /Account/EditProfile
+        public async Task<IActionResult> EditProfile()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login");
+            }
+
+            try
+            {
+                var profile = await _accountService.GetUserProfileAsync(userId.Value);
+                if (profile == null)
+                {
+                    TempData["Error"] = "Profile not found.";
+                    return RedirectToAction("Profile");
+                }
+
+                var model = new UpdateProfileViewModel
+                {
+                    Username = profile.Username,
+                    Email = profile.Email,
+                    AvatarUrl = profile.AvatarUrl
+                };
+
+                return View(model);
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while loading the edit form.";
+                return RedirectToAction("Profile");
+            }
+        }
+
+        // POST: /Account/EditProfile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditProfile(UpdateProfileViewModel model)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (!userId.HasValue)
+            {
+                return RedirectToAction("Login");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                var success = await _accountService.UpdateUserProfileAsync(userId.Value, model);
+                
+                if (success)
+                {
+                    TempData["Success"] = "Profile updated successfully!";
+                    return RedirectToAction("Profile");
+                }
+                else
+                {
+                    TempData["Error"] = "Failed to update profile. Username or email may already be taken.";
+                    return View(model);
+                }
+            }
+            catch
+            {
+                TempData["Error"] = "An error occurred while updating your profile.";
+                return View(model);
+            }
+        }
+
+
+        
     }
 }

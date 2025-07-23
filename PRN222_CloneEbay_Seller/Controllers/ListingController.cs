@@ -110,9 +110,12 @@ namespace PRN222_CloneEbay_Seller.Controllers
                     return RedirectToAction("Index");
                 }
 
-                // For now, we'll use empty lists since these methods are not implemented yet
-                ViewBag.Reviews = new List<Review>();
-                ViewBag.RelatedProducts = new List<Product>();
+                // Load reviews and related products
+                var reviews = await _listingService.GetProductReviewsAsync(id);
+                var relatedProducts = await _listingService.GetRelatedProductsAsync(id);
+
+                ViewBag.Reviews = reviews;
+                ViewBag.RelatedProducts = relatedProducts;
 
                 return View(product);
             }
@@ -164,14 +167,16 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
             if (!await CheckSellerAccessAsync())
             {
-                return Json(new { success = false, message = "You need to be an approved seller to create listings." });
+                TempData["Error"] = "You need to be an approved seller to create listings.";
+                return RedirectToAction("RequestSeller", "Account");
             }
 
             try
             {
                 if (string.IsNullOrWhiteSpace(title))
                 {
-                    return Json(new { success = false, message = "Title is required" });
+                    TempData["Error"] = "Title is required";
+                    return RedirectToAction("Create");
                 }
 
                 var product = new Product
@@ -188,14 +193,17 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
                 if (success)
                 {
-                    return Json(new { success = true, productId = product.Id });
+                    TempData["Success"] = "Draft created successfully!";
+                    return RedirectToAction("Edit", new { id = product.Id });
                 }
 
-                return Json(new { success = false, message = "Failed to create draft" });
+                TempData["Error"] = "Failed to create draft";
+                return RedirectToAction("Create");
             }
             catch
             {
-                return Json(new { success = false, message = "An error occurred" });
+                TempData["Error"] = "An error occurred while creating the draft";
+                return RedirectToAction("Create");
             }
         }
 
@@ -335,17 +343,20 @@ namespace PRN222_CloneEbay_Seller.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var userId = GetCurrentUserId();
             if (userId == 0)
             {
-                return Json(new { success = false, message = "Please log in to continue." });
+                TempData["Error"] = "Please log in to continue.";
+                return RedirectToAction("Login", "Account");
             }
 
             if (!await CheckSellerAccessAsync())
             {
-                return Json(new { success = false, message = "You need to be an approved seller to delete listings." });
+                TempData["Error"] = "You need to be an approved seller to delete listings.";
+                return RedirectToAction("RequestSeller", "Account");
             }
 
             try
@@ -353,27 +364,34 @@ namespace PRN222_CloneEbay_Seller.Controllers
                 var product = await _listingService.GetProductDetailsAsync(id);
                 if (product == null)
                 {
-                    return Json(new { success = false, message = "Product not found." });
+                    TempData["Error"] = "Product not found.";
+                    return RedirectToAction("Index");
                 }
 
                 // Check if the product belongs to current seller
                 if (product.SellerId != userId)
                 {
-                    return Json(new { success = false, message = "You can only delete your own products." });
+                    TempData["Error"] = "You can only delete your own products.";
+                    return RedirectToAction("Index");
                 }
 
                 var success = await _listingService.DeleteProductAsync(id);
 
                 if (success)
                 {
-                    return Json(new { success = true, message = "Product deleted successfully!" });
+                    TempData["Success"] = "Product deleted successfully!";
+                }
+                else
+                {
+                    TempData["Error"] = "Failed to delete product.";
                 }
 
-                return Json(new { success = false, message = "Failed to delete product." });
+                return RedirectToAction("Index");
             }
             catch
             {
-                return Json(new { success = false, message = "An error occurred while deleting the product." });
+                TempData["Error"] = "An error occurred while deleting the product.";
+                return RedirectToAction("Index");
             }
         }
 

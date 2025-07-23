@@ -27,6 +27,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IListingService, ListingService>();
+builder.Services.AddScoped<IOverviewService, OverviewService>();
 
 var app = builder.Build();
 
