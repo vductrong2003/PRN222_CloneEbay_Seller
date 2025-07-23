@@ -9,11 +9,11 @@ namespace PRN222_CloneEbay_Seller.Controllers
         private readonly IAccountService _accountService;
         private readonly IDisputeService _disputeService;
 
-        public OrdersController(IOrderService orderService, IAccountService accountService)
-        public OrdersController(IOrderService orderService, IDisputeService disputeService)
+        public OrdersController(IOrderService orderService, IDisputeService disputeService, IAccountService accountService)
         {
             _orderService = orderService;
             _accountService = accountService;
+            _disputeService = disputeService;
         }
 
         private async Task<bool> CheckSellerAccessAsync()
@@ -22,7 +22,6 @@ namespace PRN222_CloneEbay_Seller.Controllers
             if (!userId.HasValue) return false;
             
             return await _accountService.CanAccessSellerFeaturesAsync(userId.Value);
-            _disputeService = disputeService;
         }
 
         private int GetCurrentUserId()
