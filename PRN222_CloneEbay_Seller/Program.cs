@@ -1,6 +1,7 @@
 ﻿using PRN222_CloneEbay_Seller.Models;
 using PRN222_CloneEbay_Seller.Services.Interfaces;
 using PRN222_CloneEbay_Seller.Services.Implementations;
+using PRN222_CloneEbay_Seller.Hubs;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,7 +36,13 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPerformanceService, PerformanceService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IDisputeService, DisputeService>();
-// Đăng ký EmailSettings
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+
+// Add SignalR
+builder.Services.AddSignalR();
+
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // Đăng ký các services
@@ -93,5 +100,8 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Map SignalR Hub
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Run();

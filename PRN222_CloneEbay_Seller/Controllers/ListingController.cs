@@ -8,11 +8,13 @@ namespace PRN222_CloneEbay_Seller.Controllers
     {
         private readonly IListingService _listingService;
         private readonly IAccountService _accountService;
+        private readonly INotificationService _notificationService;
 
-        public ListingController(IListingService listingService, IAccountService accountService)
+        public ListingController(IListingService listingService, IAccountService accountService, INotificationService notificationService)
         {
             _listingService = listingService;
             _accountService = accountService;
+            _notificationService = notificationService;
         }
 
         private async Task<bool> CheckSellerAccessAsync()
@@ -193,6 +195,9 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
                 if (success)
                 {
+                    // Send notification to seller on other devices
+                    await _notificationService.NotifySellerListingChangedAsync(userId, "created as draft", product.Title);
+                    
                     TempData["Success"] = "Draft created successfully!";
                     return RedirectToAction("Edit", new { id = product.Id });
                 }
@@ -324,6 +329,21 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
                 if (success)
                 {
+                    // Send notifications based on status change
+                    if (originalProduct.Status != "Active" && product.Status == "Active")
+                    {
+                        // Notify all users when a new listing goes live
+                        await _notificationService.NotifyListingAddedAsync(product);
+                    }
+                    else if (originalProduct.Status == "Active" && product.Status == "Active")
+                    {
+                        // Notify users about listing update
+                        await _notificationService.NotifyListingUpdatedAsync(product);
+                    }
+                    
+                    // Notify seller on other devices about the update
+                    await _notificationService.NotifySellerListingChangedAsync(userId, "updated", product.Title);
+                    
                     TempData["Success"] = "Product updated successfully!";
                     return RedirectToAction("Details", new { id = product.Id });
                 }
@@ -379,6 +399,15 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
                 if (success)
                 {
+                    // Notify users if the listing was active
+                    if (product.Status == "Active")
+                    {
+                        await _notificationService.NotifyListingDeletedAsync(product.Title ?? "Unknown Product");
+                    }
+                    
+                    // Notify seller on other devices
+                    await _notificationService.NotifySellerListingChangedAsync(userId, "deleted", product.Title ?? "Unknown Product");
+                    
                     TempData["Success"] = "Product deleted successfully!";
                 }
                 else
@@ -417,7 +446,6 @@ namespace PRN222_CloneEbay_Seller.Controllers
                     return Json(new { success = false, message = "Product not found." });
                 }
 
-                // Check if the product belongs to current seller
                 if (product.SellerId != userId)
                 {
                     return Json(new { success = false, message = "You can only update inventory for your own products." });

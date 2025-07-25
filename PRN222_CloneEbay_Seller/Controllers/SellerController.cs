@@ -31,7 +31,6 @@ namespace PRN222_CloneEbay_Seller.Controllers
         // GET: Seller/Store - Display all stores for current seller
         public async Task<IActionResult> Store()
         {
-            // For demo purposes, using seller ID = 1. In real app, get from authentication
             int currentSellerId = 1;
 
             var stores = await _storeService.GetStoresBySellerIdAsync(currentSellerId);

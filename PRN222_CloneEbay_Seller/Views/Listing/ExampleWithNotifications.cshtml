@@ -1,0 +1,194 @@
+@model List<PRN222_CloneEbay_Seller.Models.Product>
+
+<!-- Example implementation for Listing Index with notification support -->
+
+<!-- Include CSRF token with user info -->
+@Html.AntiForgeryToken()
+<input type="hidden" name="__RequestVerificationToken" 
+       value="@Html.AntiForgeryToken()" 
+       data-user-id="@Context.Session.GetInt32("UserId")" 
+       data-user-role="@Context.Session.GetString("UserRole")" />
+
+<!-- Listings table with action buttons -->
+<div class="listings-container">
+    <div class="listing-actions-header">
+        <h2>Your Listings</h2>
+        <a href="/Listing/Create" class="btn btn-primary">Create New Listing</a>
+    </div>
+    
+    <div class="listings-grid">
+        @foreach (var listing in Model)
+        {
+            <div class="listing-card">
+                <div class="listing-header">
+                    <h4>@listing.Title</h4>
+                    <span class="status-badge status-@listing.Status?.ToLower()">@listing.Status</span>
+                </div>
+                
+                <div class="listing-details">
+                    <p class="listing-price">$@listing.Price?.ToString("N2")</p>
+                    <p class="listing-description">@(listing.Description?.Substring(0, Math.Min(100, listing.Description?.Length ?? 0)))</p>
+                </div>
+                
+                <div class="listing-actions">
+                    <a href="/Listing/Edit/@listing.Id" class="btn btn-sm btn-secondary">Edit</a>
+                    
+                    @if (listing.Status == "Draft")
+                    {
+                        <button class="btn btn-sm btn-success activate-listing-btn" 
+                                data-listing-id="@listing.Id">
+                            Activate
+                        </button>
+                    }
+                    
+                    @if (listing.Status == "Active")
+                    {
+                        <button class="btn btn-sm btn-warning deactivate-listing-btn" 
+                                data-listing-id="@listing.Id">
+                            Deactivate
+                        </button>
+                    }
+                    
+                    <button class="btn btn-sm btn-danger delete-listing-btn" 
+                            data-listing-id="@listing.Id">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Custom JavaScript for listings -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle activate listing
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('activate-listing-btn')) {
+            e.preventDefault();
+            const listingId = e.target.getAttribute('data-listing-id');
+            updateListingStatus(listingId, 'Active');
+        }
+        
+        if (e.target.classList.contains('deactivate-listing-btn')) {
+            e.preventDefault();
+            const listingId = e.target.getAttribute('data-listing-id');
+            updateListingStatus(listingId, 'Inactive');
+        }
+    });
+});
+
+function updateListingStatus(listingId, status) {
+    const url = `/Listing/UpdateStatus`;
+    const data = { id: listingId, status: status };
+    
+    makeAjaxRequest(url, 'POST', data, (response) => {
+        // Reload page after successful status update
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    });
+}
+</script>
+
+<style>
+    .listings-container {
+        padding: 2rem;
+    }
+    
+    .listing-actions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .listings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .listing-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e5e5;
+    }
+    
+    .listing-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .listing-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        flex-grow: 1;
+        margin-right: 1rem;
+    }
+    
+    .listing-details {
+        margin-bottom: 1.5rem;
+    }
+    
+    .listing-price {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #28a745;
+        margin: 0 0 0.5rem 0;
+    }
+    
+    .listing-description {
+        color: #666;
+        font-size: 0.9rem;
+        margin: 0;
+        line-height: 1.4;
+    }
+    
+    .listing-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        padding: 0.25rem 0.75rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    
+    .btn-primary { background: #007bff; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-warning { background: #ffc107; color: #333; }
+    .btn-danger { background: #dc3545; color: white; }
+    
+    .btn:hover {
+        opacity: 0.9;
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    
+    .status-draft { background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6; }
+    .status-active { background: #d4edda; color: #155724; }
+    .status-inactive { background: #f8d7da; color: #721c24; }
+    .status-sold { background: #d1ecf1; color: #0c5460; }
+</style>

@@ -51,7 +51,7 @@
                 </div>
 
                 <div class="tab-wrapper">
-                    <a href="#" class="tab has-dropdown">Marketing</a>
+                    <a href="/Coupon" class="tab has-dropdown">Marketing</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Promotions</a>
                         <a href="#" class="dropdown-item">Advertising</a>
@@ -68,7 +68,7 @@
                 </div>
 
                 <div class="tab-wrapper">
-                    <a href="#" class="tab has-dropdown">Payments</a>
+                    <a href="/Payment" class="tab has-dropdown">Payments</a>
                     <div class="dropdown-menu">
                         <a href="#" class="dropdown-item">Overview</a>
                         <a href="#" class="dropdown-item">Payouts</a>
@@ -160,9 +160,9 @@
                 <div class="overview-card-change">All orders in period</div>
             </div>
             <div class="overview-card">
-                <div class="overview-card-title">Susccesfully Deli</div>
+                <div class="overview-card-title">Successfully Delivered</div>
                 <div class="overview-card-value">@orderStats.GetValueOrDefault("Delivered", 0)</div>
-                <div class="overview-card-change">Pending orders</div>
+                <div class="overview-card-change">Completed orders</div>
             </div>
             <div class="overview-card">
                 <div class="overview-card-title">Average Order Value</div>
@@ -335,97 +335,5 @@
             });
         }
     </script>
-
-    <style>
-        /* ...existing code... */
-        
-        .filter-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-        
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .filter-label {
-            font-size: 0.9rem;
-            color: #666;
-            white-space: nowrap;
-        }
-        
-        .filter-dropdown {
-            padding: 0.4rem 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .status-card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            border-left: 4px solid;
-        }
-
-        .status-card.pending { border-left-color: #ffc107; }
-        .status-card.paid { border-left-color: #17a2b8; }
-        .status-card.shipped { border-left-color: #007bff; }
-        .status-card.delivered { border-left-color: #28a745; }
-
-        .status-card-title {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .status-card-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .overview-card-change.positive {
-            color: #28a745;
-        }
-        
-        .overview-card-change.negative {
-            color: #dc3545;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: 2rem 0;
-        }
-        
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .chart-content {
-            position: relative;
-            height: 300px;
-        }
-        
-        .chart-total {
-            color: #28a745;
-            font-weight: 600;
-        }
-    </style>
 </body>
 </html>

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PRN222_CloneEbay_Seller.Models;
+using PRN222_CloneEbay_Seller.Services.Interfaces;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,10 +11,12 @@ namespace PRN222_CloneEbay_Seller.Controllers
     public class ProductController : Controller
     {
         private readonly CloneEbayDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public ProductController(CloneEbayDbContext context)
+        public ProductController(CloneEbayDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         // GET: Product (Hiển thị danh sách sản phẩm)

@@ -18,11 +18,15 @@ namespace PRN222_CloneEbay_Seller.Controllers
             _paymentService = paymentService;
             _context = context;
         }
+        private int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("UserId") ?? 0;
+        }
 
         // Action cho trang danh sách Lịch Sử Giao Dịch
         public async Task<IActionResult> Index()
         {
-            var sellerId = 1; // Giả định ID người bán để test
+            var sellerId = GetCurrentUserId(); // Giả định ID người bán để test
             var transactions = await _paymentService.GetPaymentTransactionsForSellerAsync(sellerId);
 
             // --- Nâng cấp: Tính toán các số liệu thống kê ---

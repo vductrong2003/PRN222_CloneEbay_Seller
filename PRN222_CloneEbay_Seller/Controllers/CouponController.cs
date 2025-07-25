@@ -15,11 +15,14 @@ namespace PRN222_CloneEbay_Seller.Controllers
         {
             _context = context;
         }
-
+        private int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("UserId") ?? 0;
+        }
         // GET: /Coupon (Danh sách coupons)
         public async Task<IActionResult> Index()
         {
-            var sellerId = 1; // Giả định ID người bán để test
+            var sellerId = GetCurrentUserId();
             var coupons = await _context.Coupons
                 .Include(c => c.Product) // Include Product để hiển thị tên
                 .Where(c => c.Product.SellerId == sellerId)
@@ -30,7 +33,7 @@ namespace PRN222_CloneEbay_Seller.Controllers
         // GET: /Coupon/Create
         public async Task<IActionResult> Create()
         {
-            var sellerId = 1; // Giả định ID
+            var sellerId = GetCurrentUserId();
             ViewBag.Products = new SelectList(
                 await _context.Products.Where(p => p.SellerId == sellerId).ToListAsync(),
                 "Id", "Title");
@@ -48,7 +51,7 @@ namespace PRN222_CloneEbay_Seller.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            var sellerId = 1; // Giả định ID
+            var sellerId = GetCurrentUserId();
             ViewBag.Products = new SelectList(
                 await _context.Products.Where(p => p.SellerId == sellerId).ToListAsync(),
                 "Id", "Title", coupon.ProductId);
@@ -63,7 +66,7 @@ namespace PRN222_CloneEbay_Seller.Controllers
                 return NotFound();
             }
 
-            var sellerId = 1; // Giả định ID người bán để test
+            var sellerId = GetCurrentUserId();
             var coupon = await _context.Coupons
                 .Include(c => c.Product) // Include Product để kiểm tra quyền sở hữu
                 .FirstOrDefaultAsync(c => c.Id == id);
@@ -98,7 +101,7 @@ namespace PRN222_CloneEbay_Seller.Controllers
                 {
                     // Security check: Đảm bảo người dùng không sửa productId thành của người khác
                     var product = await _context.Products.FindAsync(coupon.ProductId);
-                    var sellerId = 1; // Giả định ID
+                    var sellerId = GetCurrentUserId();
                     if (product == null || product.SellerId != sellerId)
                     {
                         ModelState.AddModelError("ProductId", "Invalid product selected.");

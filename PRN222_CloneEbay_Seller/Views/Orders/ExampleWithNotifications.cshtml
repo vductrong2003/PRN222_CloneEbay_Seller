@@ -1,0 +1,104 @@
+@model List<PRN222_CloneEbay_Seller.Models.OrderTable>
+
+<!-- Example implementation for Orders Index with notification support -->
+
+<!-- Include CSRF token with user info -->
+@Html.AntiForgeryToken()
+<input type="hidden" name="__RequestVerificationToken" 
+       value="@Html.AntiForgeryToken()" 
+       data-user-id="@Context.Session.GetInt32("UserId")" 
+       data-user-role="@Context.Session.GetString("UserRole")" />
+
+<!-- Orders table with action buttons -->
+<div class="orders-table">
+    @foreach (var order in Model)
+    {
+        <div class="order-row">
+            <div class="order-info">
+                <strong>Order #@order.Id</strong>
+                <span class="status-badge status-@order.Status?.ToLower()">@order.Status</span>
+            </div>
+            
+            <div class="order-actions">
+                <!-- Status update buttons with AJAX -->
+                @if (order.Status == "Pending")
+                {
+                    <button class="btn btn-sm btn-success update-status-btn" 
+                            data-order-id="@order.Id" 
+                            data-status="Paid">
+                        Mark as Paid
+                    </button>
+                }
+                
+                @if (order.Status == "Paid")
+                {
+                    <button class="btn btn-sm btn-primary update-status-btn" 
+                            data-order-id="@order.Id" 
+                            data-status="Shipped">
+                        Mark as Shipped
+                    </button>
+                }
+                
+                @if (order.Status == "Shipped")
+                {
+                    <button class="btn btn-sm btn-success update-status-btn" 
+                            data-order-id="@order.Id" 
+                            data-status="Delivered">
+                        Mark as Delivered
+                    </button>
+                }
+                
+                <!-- Cancel button -->
+                @if (order.Status != "Cancelled" && order.Status != "Delivered")
+                {
+                    <button class="btn btn-sm btn-danger update-status-btn" 
+                            data-order-id="@order.Id" 
+                            data-status="Cancelled">
+                        Cancel Order
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .order-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .order-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.25rem 0.75rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+    
+    .btn-success { background: #28a745; color: white; }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-pending { background: #ffc107; color: #333; }
+    .status-paid { background: #17a2b8; color: white; }
+    .status-shipped { background: #007bff; color: white; }
+    .status-delivered { background: #28a745; color: white; }
+    .status-cancelled { background: #dc3545; color: white; }
+</style>

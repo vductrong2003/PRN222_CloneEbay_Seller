@@ -105,6 +105,22 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     
+    <!-- SignalR -->
+    <script src="https://unpkg.com/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    
+    <!-- Notifications -->
+    <script src="~/js/notifications.js" asp-append-version="true"></script>
+    
+    <!-- Add user info for JavaScript -->
+    @if (userId.HasValue)
+    {
+        <script>
+            // Store user info for JavaScript access
+            sessionStorage.setItem('userId', '@userId');
+            sessionStorage.setItem('userRole', '@userRole');
+        </script>
+    }
+    
     <script>
         function toggleUserMenu() {
             const menu = document.getElementById('userDropdownMenu');

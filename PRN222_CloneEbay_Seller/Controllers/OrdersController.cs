@@ -8,12 +8,14 @@ namespace PRN222_CloneEbay_Seller.Controllers
         private readonly IOrderService _orderService;
         private readonly IAccountService _accountService;
         private readonly IDisputeService _disputeService;
+        private readonly INotificationService _notificationService;
 
-        public OrdersController(IOrderService orderService, IDisputeService disputeService, IAccountService accountService)
+        public OrdersController(IOrderService orderService, IDisputeService disputeService, IAccountService accountService, INotificationService notificationService)
         {
             _orderService = orderService;
             _accountService = accountService;
             _disputeService = disputeService;
+            _notificationService = notificationService;
         }
 
         private async Task<bool> CheckSellerAccessAsync()
@@ -197,10 +199,23 @@ namespace PRN222_CloneEbay_Seller.Controllers
 
             try
             {
+                var order = await _orderService.GetOrderDetailsAsync(orderId, userId);
+                if (order == null)
+                {
+                    return Json(new { success = false, message = "Order not found or you don't have permission to access it." });
+                }
+                
                 var success = await _orderService.UpdateOrderStatusAsync(orderId, status, userId);
 
                 if (success)
                 {
+                    // Send notification to buyer about status change
+                    order.Status = status; // Update the status for notification
+                    await _notificationService.NotifyOrderStatusChangedAsync(order);
+                    
+                    // Notify seller on other devices
+                    await _notificationService.NotifySellerOrderChangedAsync(userId, $"updated to {status}", orderId);
+                    
                     return Json(new { success = true, message = "Order status updated successfully!" });
                 }
 
